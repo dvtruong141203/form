@@ -3,39 +3,41 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Quét CCCD Gắn Chip</title>
-    <!-- Thư viện quét QR Code -->
-    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+    <title>Quét CCCD</title>
+    <script src="https://unpkg.com/html5-qrcode"></script>
     <style>
         :root {
             --bg-color: #0f172a;
-            --card-bg: rgba(30, 41, 59, 0.7);
-            --text-color: #f8fafc;
-            --text-muted: #94a3b8;
-            --accent-color: #38bdf8;
+            --card-bg: rgba(30, 41, 59, 0.85);
             --border-color: rgba(255, 255, 255, 0.1);
+            --text-color: #f8fafc;
+            --primary: #3b82f6;
+            --primary-hover: #2563eb;
+            --success: #22c55e;
+            --secondary: #475569;
+            --danger: #ef4444;
         }
 
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: var(--bg-color);
+            background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
             color: var(--text-color);
             margin: 0;
             padding: 20px;
+            min-height: 100vh;
             display: flex;
             justify-content: center;
             align-items: center;
-            min-height: 100vh;
         }
 
         .container {
             width: 100%;
-            max-width: 500px;
+            max-width: 480px;
             background: var(--card-bg);
             backdrop-filter: blur(12px);
             -webkit-backdrop-filter: blur(12px);
             border: 1px solid var(--border-color);
-            border-radius: 20px;
+            border-radius: 16px;
             padding: 24px;
             box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
         }
@@ -44,193 +46,374 @@
             text-align: center;
             margin-top: 0;
             margin-bottom: 20px;
-            font-size: 1.5rem;
-            color: var(--accent-color);
+            font-size: 1.4rem;
+            color: #e2e8f0;
         }
 
-        #reader {
-            width: 100% !important;
-            border: none !important;
-            border-radius: 12px;
-            overflow: hidden;
-            background: #000;
+        .form-group {
+            margin-bottom: 12px;
+            position: relative;
         }
 
-        #reader video {
-            border-radius: 12px;
+        label {
+            display: block;
+            font-size: 0.85rem;
+            color: #94a3b8;
+            margin-bottom: 4px;
         }
 
-        .result-box {
-            margin-top: 20px;
+        .input-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        input {
+            width: 100%;
+            padding: 10px 40px 10px 14px;
             background: rgba(15, 23, 42, 0.6);
             border: 1px solid var(--border-color);
-            border-radius: 12px;
-            padding: 16px;
-        }
-
-        .result-box h3 {
-            margin-top: 0;
-            font-size: 1.1rem;
-            border-bottom: 1px solid var(--border-color);
-            padding-bottom: 8px;
-            color: var(--accent-color);
-        }
-
-        .info-row {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 8px;
-            font-size: 0.95rem;
-        }
-
-        .info-label {
-            color: var(--text-muted);
-            font-weight: 500;
-        }
-
-        .info-value {
+            border-radius: 8px;
             color: var(--text-color);
-            font-weight: 600;
-            text-align: right;
+            font-size: 0.95rem;
+            box-sizing: border-box;
+            outline: none;
+            transition: border-color 0.2s;
         }
 
-        .btn-group {
+        input:focus {
+            border-color: var(--primary);
+        }
+
+        .scan-icon-btn {
+            position: absolute;
+            right: 8px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 1.2rem;
+            padding: 4px;
+            border-radius: 6px;
+            transition: background 0.2s;
             display: flex;
-            gap: 10px;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .scan-icon-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .btn-submit {
+            width: 100%;
+            padding: 12px;
+            background: var(--success);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
             margin-top: 15px;
         }
 
-        button {
-            flex: 1;
-            background: var(--accent-color);
-            color: #0f172a;
+        .btn-submit:hover {
+            background: #16a34a;
+        }
+
+        .btn-submit:disabled {
+            background: var(--secondary);
+            cursor: not-allowed;
+        }
+
+        .error { color: var(--danger); }
+
+        /* --- MODAL POPUP CHỌN ẢNH / CHỤP ẢNH --- */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(5px);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .modal-content {
+            background: #1e293b;
+            border: 1px solid var(--border-color);
+            width: 90%;
+            max-width: 400px;
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+            box-sizing: border-box;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .modal-header h3 {
+            margin: 0;
+            font-size: 1.1rem;
+            color: #f8fafc;
+        }
+
+        .close-btn {
+            background: none;
             border: none;
-            padding: 10px 16px;
-            border-radius: 8px;
-            font-weight: bold;
+            color: #94a3b8;
+            font-size: 1.2rem;
             cursor: pointer;
+        }
+
+        .modal-options {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .modal-btn {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 0.9rem;
+            color: white;
             transition: opacity 0.2s;
         }
 
-        button:hover {
-            opacity: 0.9;
+        .btn-camera { background: var(--primary); }
+        .btn-gallery { background: #8b5cf6; }
+        .modal-btn:hover { opacity: 0.9; }
+
+        #reader {
+            width: 100% !important;
+            border-radius: 8px;
+            overflow: hidden;
+            display: none;
+            margin-top: 10px;
         }
 
-        button.secondary {
-            background: #475569;
-            color: #fff;
+        #file-input-modal {
+            display: none;
         }
     </style>
 </head>
 <body>
 
     <div class="container">
-        <h2>Quét QR Căn Cước Công Dân</h2>
+        <h2>Quét CCCD</h2>
         
-        <!-- Khung hiển thị Camera -->
-        <div id="reader"></div>
-
-        <!-- Khung hiển thị kết quả -->
-        <div class="result-box">
-            <h3>Thông tin đã quét</h3>
-            <div class="info-row">
-                <span class="info-label">Số CCCD:</span>
-                <span id="cccd" class="info-value">Chưa có</span>
-            </div>
-            <div class="info-row">
-                <span class="info-label">Họ và tên:</span>
-                <span id="fullname" class="info-value">Chưa có</span>
-            </div>
-            <div class="info-row">
-                <span class="info-label">Ngày sinh:</span>
-                <span id="dob" class="info-value">Chưa có</span>
-            </div>
-            <div class="info-row">
-                <span class="info-label">Giới tính:</span>
-                <span id="gender" class="info-value">Chưa có</span>
-            </div>
-            <div class="info-row">
-                <span class="info-label">Địa chỉ:</span>
-                <span id="address" class="info-value">Chưa có</span>
+        <div class="form-group">
+            <label>Số CCCD</label>
+            <div class="input-wrapper">
+                <input type="text" id="Cot_C" readonly>
+                <button class="scan-icon-btn" onclick="openScanModal()" title="Mở quét CCCD">📷</button>
             </div>
         </div>
+        <div class="form-group">
+            <label>Số CMND</label>
+            <input type="text" id="Cot_D" readonly>
+        </div>
+        <div class="form-group">
+            <label>Họ và Tên</label>
+            <input type="text" id="Cot_E" readonly>
+        </div>
+        <div class="form-group">
+            <label>Ngày sinh</label>
+            <input type="text" id="Cot_F" readonly>
+        </div>
+        <div class="form-group">
+            <label>Giới tính</label>
+            <input type="text" id="Cot_G" readonly>
+        </div>
+        <div class="form-group">
+            <label>Nơi cư trú</label>
+            <input type="text" id="Cot_H" readonly>
+        </div>
+        <div class="form-group">
+            <label>Ngày cấp</label>
+            <input type="text" id="Cot_I" readonly>
+        </div>
 
-        <div class="btn-group">
-            <button id="startBtn" onclick="startScanner()">Bật Camera</button>
-            <button class="secondary" onclick="resetScanner()">Quét Lại</button>
+        <button id="submitBtn" class="btn-submit" onclick="sendDataBackground()" disabled>Lưu</button>
+    </div>
+
+    <!-- MODAL CHỌN ẢNH / CHỤP ẢNH -->
+    <div class="modal-overlay" id="scanModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Chọn phương thức quét CCCD</h3>
+                <button class="close-btn" onclick="closeScanModal()">✕</button>
+            </div>
+            <div class="modal-options">
+                <button class="modal-btn btn-camera" onclick="startCameraScan()">📸 Chụp Ảnh</button>
+                <button class="modal-btn btn-gallery" onclick="document.getElementById('file-input-modal').click()">📁 Chọn Ảnh</button>
+                <input type="file" id="file-input-modal" accept="image/*" onchange="scanImageFile(this)">
+            </div>
+            <div id="reader"></div>
+            <div id="modal-status" style="text-align: center; font-size: 0.85rem; color: #cbd5e1; margin-top: 10px;"></div>
         </div>
     </div>
 
     <script>
-        let html5QrCode;
+        const WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbyOz_0L9XUbwzt50UNG7M9ftZKmeYx_NdTFjep5hc25OeTfb1YlhiwvkCPUV4fHGMeMqA/exec";
+        let html5QrCode = null;
+        let isCameraActive = false;
 
-        function onScanSuccess(decodedText, decodedResult) {
-            // Dữ liệu QR Code trên CCCD gắn chip có dạng: SoCCCD|SoCMNDCu|HoVaTen|NgaySinh|GioiTinh|DiaChi|NgayCap
-            // Các trường cách nhau bởi dấu gạch đứng "|"
-            console.log(`Code matched = ${decodedText}`);
-            
-            const parts = decodedText.split("|");
-            
-            if (parts.length >= 6) {
-                document.getElementById('cccd').innerText = parts[0] || 'N/A';
-                document.getElementById('fullname').innerText = parts[2] || 'N/A';
-                
-                // Định dạng lại ngày sinh từ DDMMYYYY sang DD/MM/YYYY
-                let rawDob = parts[3];
-                if (rawDob && rawDob.length === 8) {
-                    rawDob = `${rawDob.slice(0,2)}/${rawDob.slice(2,4)}/${rawDob.slice(4)}`
-                }
-                document.getElementById('dob').innerText = rawDob || 'N/A';
-                
-                document.getElementById('gender').innerText = parts[4] || 'N/A';
-                document.getElementById('address').innerText = parts[5] || 'N/A';
-
-                // Tự động dừng camera sau khi quét thành công để tiết kiệm pin
-                stopScanner();
-            } else {
-                alert("Mã QR không phải của CCCD gắn chip hợp lệ!");
-            }
+        function openScanModal() {
+            document.getElementById('scanModal').style.display = 'flex';
         }
 
-        function startScanner() {
+        function closeScanModal() {
+            if (isCameraActive && html5QrCode) {
+                html5QrCode.stop().then(() => {
+                    isCameraActive = false;
+                    document.getElementById('reader').style.display = 'none';
+                }).catch(err => console.log(err));
+            }
+            document.getElementById('scanModal').style.display = 'none';
+            document.getElementById('modal-status').innerText = '';
+        }
+
+        function formatVNDate(raw) {
+            if (raw && raw.length === 8) {
+                return `${raw.substr(0, 2)}/${raw.substr(2, 2)}/${raw.substr(4, 4)}`;
+            }
+            return raw || "";
+        }
+
+        function parseCCCDQRCode(qrText) {
+            const parts = qrText.split('|');
+            if (parts.length >= 7 && /^\d{12}$/.test(parts[0])) {
+                return {
+                    isValid: true,
+                    data: {
+                        Cot_C: parts[0],
+                        Cot_D: parts[1] || "",
+                        Cot_E: parts[2] || "",
+                        Cot_F: formatVNDate(parts[3]),
+                        Cot_G: parts[4] || "",
+                        Cot_H: parts[5] || "",
+                        Cot_I: formatVNDate(parts[6])
+                    }
+                };
+            }
+            return { isValid: false };
+        }
+
+        function handleScanResult(decodedText) {
+            const result = parseCCCDQRCode(decodedText);
+            if (!result.isValid) {
+                document.getElementById('modal-status').innerHTML = '<span class="error">❌ Mã QR không phải CCCD gắn chip hợp lệ!</span>';
+                return;
+            }
+
+            const data = result.data;
+            document.getElementById('Cot_C').value = data.Cot_C;
+            document.getElementById('Cot_D').value = data.Cot_D;
+            document.getElementById('Cot_E').value = data.Cot_E;
+            document.getElementById('Cot_F').value = data.Cot_F;
+            document.getElementById('Cot_G').value = data.Cot_G;
+            document.getElementById('Cot_H').value = data.Cot_H;
+            document.getElementById('Cot_I').value = data.Cot_I;
+
+            document.getElementById('submitBtn').disabled = false;
+            closeScanModal();
+        }
+
+        function startCameraScan() {
+            const readerDiv = document.getElementById('reader');
+            readerDiv.style.display = "block";
+            document.getElementById('modal-status').innerText = "Đang mở camera...";
+
             if (!html5QrCode) {
                 html5QrCode = new Html5Qrcode("reader");
             }
-            
+
+            if (isCameraActive) return;
+
             html5QrCode.start(
-                { facingMode: "environment" }, // Ưu tiên dùng camera sau trên điện thoại
-                {
-                    fps: 10,    // Khung hình mỗi giây
-                    qrbox: { width: 250, height: 150 } // Vùng quét hình chữ nhật phù hợp với mã QR CCCD
+                { facingMode: "environment" },
+                { fps: 10, qrbox: { width: 220, height: 140 } },
+                (decodedText) => {
+                    handleScanResult(decodedText);
                 },
-                onScanSuccess
-            ).catch(err => {
-                console.error("Không thể khởi động camera.", err);
-                alert("Không thể mở camera. Vui lòng cấp quyền truy cập camera cho trình duyệt.");
+                (err) => {}
+            ).then(() => {
+                isCameraActive = true;
+                document.getElementById('modal-status').innerText = "Hướng camera về phía mã QR trên CCCD";
+            }).catch(err => {
+                document.getElementById('modal-status').innerHTML = `<span class="error">Không mở được camera: ${err}</span>`;
             });
         }
 
-        function stopScanner() {
-            if (html5QrCode && html5QrCode.isScanning) {
-                html5QrCode.stop().catch(err => {
-                    console.error("Lỗi khi dừng camera", err);
-                });
+        function scanImageFile(input) {
+            if (input.files && input.files[0]) {
+                const file = input.files[0];
+                document.getElementById('modal-status').innerText = "Đang phân tích ảnh...";
+
+                if (!html5QrCode) {
+                    html5QrCode = new Html5Qrcode("reader");
+                }
+
+                html5QrCode.scanFile(file, true)
+                    .then(decodedText => {
+                        handleScanResult(decodedText);
+                    })
+                    .catch(err => {
+                        document.getElementById('modal-status').innerHTML = `<span class="error">❌ Không tìm thấy mã QR CCCD trong ảnh!</span>`;
+                    });
             }
         }
 
-        function resetScanner() {
-            document.getElementById('cccd').innerText = 'Chưa có';
-            document.getElementById('fullname').innerText = 'Chưa có';
-            document.getElementById('dob').innerText = 'Chưa có';
-            document.getElementById('gender').innerText = 'Chưa có';
-            document.getElementById('address').innerText = 'Chưa có';
-            startScanner();
+        // --- HÀM LƯU NGẦM VÀ TỰ ĐỘNG XÓA TRẮNG FORM ---
+        function sendDataBackground() {
+            const payload = {
+                "sheet": "CCCD",
+                "action": "add",
+                "Cot_C": document.getElementById('Cot_C').value,
+                "Cot_D": document.getElementById('Cot_D').value,
+                "Cot_E": document.getElementById('Cot_E').value,
+                "Cot_F": document.getElementById('Cot_F').value,
+                "Cot_G": document.getElementById('Cot_G').value,
+                "Cot_H": document.getElementById('Cot_H').value,
+                "Cot_I": document.getElementById('Cot_I').value
+            };
+
+            // Gửi ngầm lên server
+            fetch(WEBHOOK_URL, {
+                method: "POST",
+                headers: { "Content-Type": "text/plain;charset=utf-8" },
+                body: JSON.stringify(payload)
+            }).catch(err => console.log(err));
+
+            // Xóa trắng form ngay lập tức
+            resetForm();
         }
 
-        // Tự động bật camera khi tải trang
-        window.onload = function() {
-            startScanner();
-        };
+        function resetForm() {
+            document.getElementById('Cot_C').value = "";
+            document.getElementById('Cot_D').value = "";
+            document.getElementById('Cot_E').value = "";
+            document.getElementById('Cot_F').value = "";
+            document.getElementById('Cot_G').value = "";
+            document.getElementById('Cot_H').value = "";
+            document.getElementById('Cot_I').value = "";
+            document.getElementById('submitBtn').disabled = true;
+        }
     </script>
 </body>
 </html>
