@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quét CCCD Gắn Chip</title>
+    <!-- Thư viện quét QR Code -->
+    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --card-bg: rgba(30, 41, 59, 0.7);
+            --text-color: #f8fafc;
+            --text-muted: #94a3b8;
+            --accent-color: #38bdf8;
+            --border-color: rgba(255, 255, 255, 0.1);
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 500px;
+            background: var(--card-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            padding: 24px;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+        }
+
+        h2 {
+            text-align: center;
+            margin-top: 0;
+            margin-bottom: 20px;
+            font-size: 1.5rem;
+            color: var(--accent-color);
+        }
+
+        #reader {
+            width: 100% !important;
+            border: none !important;
+            border-radius: 12px;
+            overflow: hidden;
+            background: #000;
+        }
+
+        #reader video {
+            border-radius: 12px;
+        }
+
+        .result-box {
+            margin-top: 20px;
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 16px;
+        }
+
+        .result-box h3 {
+            margin-top: 0;
+            font-size: 1.1rem;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 8px;
+            color: var(--accent-color);
+        }
+
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 0.95rem;
+        }
+
+        .info-label {
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        .info-value {
+            color: var(--text-color);
+            font-weight: 600;
+            text-align: right;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        button {
+            flex: 1;
+            background: var(--accent-color);
+            color: #0f172a;
+            border: none;
+            padding: 10px 16px;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+
+        button:hover {
+            opacity: 0.9;
+        }
+
+        button.secondary {
+            background: #475569;
+            color: #fff;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h2>Quét QR Căn Cước Công Dân</h2>
+        
+        <!-- Khung hiển thị Camera -->
+        <div id="reader"></div>
+
+        <!-- Khung hiển thị kết quả -->
+        <div class="result-box">
+            <h3>Thông tin đã quét</h3>
+            <div class="info-row">
+                <span class="info-label">Số CCCD:</span>
+                <span id="cccd" class="info-value">Chưa có</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Họ và tên:</span>
+                <span id="fullname" class="info-value">Chưa có</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Ngày sinh:</span>
+                <span id="dob" class="info-value">Chưa có</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Giới tính:</span>
+                <span id="gender" class="info-value">Chưa có</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Địa chỉ:</span>
+                <span id="address" class="info-value">Chưa có</span>
+            </div>
+        </div>
+
+        <div class="btn-group">
+            <button id="startBtn" onclick="startScanner()">Bật Camera</button>
+            <button class="secondary" onclick="resetScanner()">Quét Lại</button>
+        </div>
+    </div>
+
+    <script>
+        let html5QrCode;
+
+        function onScanSuccess(decodedText, decodedResult) {
+            // Dữ liệu QR Code trên CCCD gắn chip có dạng: SoCCCD|SoCMNDCu|HoVaTen|NgaySinh|GioiTinh|DiaChi|NgayCap
+            // Các trường cách nhau bởi dấu gạch đứng "|"
+            console.log(`Code matched = ${decodedText}`);
+            
+            const parts = decodedText.split("|");
+            
+            if (parts.length >= 6) {
+                document.getElementById('cccd').innerText = parts[0] || 'N/A';
+                document.getElementById('fullname').innerText = parts[2] || 'N/A';
+                
+                // Định dạng lại ngày sinh từ DDMMYYYY sang DD/MM/YYYY
+                let rawDob = parts[3];
+                if (rawDob && rawDob.length === 8) {
+                    rawDob = `${rawDob.slice(0,2)}/${rawDob.slice(2,4)}/${rawDob.slice(4)}`
+                }
+                document.getElementById('dob').innerText = rawDob || 'N/A';
+                
+                document.getElementById('gender').innerText = parts[4] || 'N/A';
+                document.getElementById('address').innerText = parts[5] || 'N/A';
+
+                // Tự động dừng camera sau khi quét thành công để tiết kiệm pin
+                stopScanner();
+            } else {
+                alert("Mã QR không phải của CCCD gắn chip hợp lệ!");
+            }
+        }
+
+        function startScanner() {
+            if (!html5QrCode) {
+                html5QrCode = new Html5Qrcode("reader");
+            }
+            
+            html5QrCode.start(
+                { facingMode: "environment" }, // Ưu tiên dùng camera sau trên điện thoại
+                {
+                    fps: 10,    // Khung hình mỗi giây
+                    qrbox: { width: 250, height: 150 } // Vùng quét hình chữ nhật phù hợp với mã QR CCCD
+                },
+                onScanSuccess
+            ).catch(err => {
+                console.error("Không thể khởi động camera.", err);
+                alert("Không thể mở camera. Vui lòng cấp quyền truy cập camera cho trình duyệt.");
+            });
+        }
+
+        function stopScanner() {
+            if (html5QrCode && html5QrCode.isScanning) {
+                html5QrCode.stop().catch(err => {
+                    console.error("Lỗi khi dừng camera", err);
+                });
+            }
+        }
+
+        function resetScanner() {
+            document.getElementById('cccd').innerText = 'Chưa có';
+            document.getElementById('fullname').innerText = 'Chưa có';
+            document.getElementById('dob').innerText = 'Chưa có';
+            document.getElementById('gender').innerText = 'Chưa có';
+            document.getElementById('address').innerText = 'Chưa có';
+            startScanner();
+        }
+
+        // Tự động bật camera khi tải trang
+        window.onload = function() {
+            startScanner();
+        };
+    </script>
+</body>
+</html>
