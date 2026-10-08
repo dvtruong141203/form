@@ -3,175 +3,184 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Thêm Tài Khoản Ngân Hàng</title>
-    <!-- Thêm font chữ Google Inter -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <title>Cổng Tạo Mã VietQR</title>
+    <!-- Font chữ Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
-        * {
-            box-sizing: border-box;
-            font-family: 'Inter', sans-serif;
-        }
+        * { box-sizing: border-box; font-family: 'Inter', sans-serif; }
         body { 
             margin: 0; 
             padding: 20px; 
-            background: linear-gradient(135deg, #e0c3fc 0%, #8ec5fc 100%);
+            /* Tone màu Xanh Navy chuẩn ngân hàng */
+            background: linear-gradient(135deg, #0f2027 0%, #203a43 50%, #2c5364 100%);
             min-height: 100vh;
             display: flex; 
             align-items: center; 
             justify-content: center;
         }
         
-        .app-container {
-            width: 100%;
-            max-width: 420px;
-            position: relative;
-        }
+        .app-container { width: 100%; max-width: 420px; position: relative; }
 
-        /* --- FORM NHẬP LIỆU --- */
+        /* --- 1. FORM NHẬP LIỆU --- */
         .form-card {
             background: #ffffff; 
-            padding: 30px 25px; 
-            border-radius: 20px; 
-            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+            padding: 35px 25px; 
+            border-radius: 24px; 
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
             transition: all 0.4s ease;
         }
         .form-card h2 { 
-            margin: 0 0 25px 0; 
+            margin: 0 0 30px 0; 
             font-size: 22px; 
-            color: #1f2937; 
+            color: #1e293b; 
             text-align: center;
-            font-weight: 700;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
         
-        .form-group { margin-bottom: 20px; }
+        .form-group { margin-bottom: 22px; }
         .form-group label { 
             display: block; 
             margin-bottom: 8px; 
             font-size: 14px; 
             font-weight: 600; 
-            color: #4b5563;
+            color: #475569;
         }
         .form-group input, .form-group select {
             width: 100%; 
-            padding: 14px 16px; 
-            border: 2px solid #e5e7eb; 
+            padding: 15px 16px; 
+            border: 2px solid #e2e8f0; 
             border-radius: 12px; 
             font-size: 15px; 
             outline: none; 
             transition: 0.3s;
-            background: #f9fafb;
-            color: #111827;
+            background: #f8fafc;
+            color: #0f172a;
+            font-weight: 500;
         }
         .form-group input:focus, .form-group select:focus { 
-            border-color: #3b82f6; 
+            border-color: #2563eb; 
             background: #ffffff;
-            box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
+            box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1);
         }
         
         .submit-btn { 
             width: 100%; 
-            padding: 16px; 
-            background: #3b82f6; 
+            padding: 18px; 
+            background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%);
             color: white; 
             border: none; 
-            border-radius: 12px; 
+            border-radius: 14px; 
             font-size: 16px; 
             font-weight: 700; 
             cursor: pointer; 
             transition: 0.3s;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            margin-top: 10px;
+            margin-top: 15px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            box-shadow: 0 10px 20px rgba(37, 99, 235, 0.25);
         }
-        .submit-btn:hover { background: #2563eb; transform: translateY(-2px); box-shadow: 0 5px 15px rgba(37, 99, 235, 0.3); }
-        .submit-btn:disabled { background: #9ca3af; cursor: not-allowed; transform: translateY(0); box-shadow: none;}
-
-        /* Loader Icon */
-        .spinner {
-            border: 3px solid rgba(255,255,255,0.3);
-            border-top: 3px solid white;
-            border-radius: 50%;
-            width: 20px;
-            height: 20px;
-            animation: spin 1s linear infinite;
-            display: none;
-            margin-right: 10px;
+        .submit-btn:hover { 
+            transform: translateY(-2px); 
+            box-shadow: 0 15px 25px rgba(37, 99, 235, 0.4); 
         }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
-        /* --- MÀN HÌNH THÀNH CÔNG (SUCCESS CARD) --- */
-        .success-card {
+        /* --- 2. THẺ CHI TIẾT (MÀN HÌNH THÀNH CÔNG) --- */
+        .detail-card {
             background: #ffffff; 
-            border-radius: 20px; 
-            box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+            border-radius: 24px; 
+            box-shadow: 0 25px 50px rgba(0,0,0,0.4);
             overflow: hidden;
-            display: none;
+            display: none; /* Mặc định ẩn */
             text-align: center;
-            animation: slideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+            animation: fadeInScale 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
-        @keyframes slideUp {
-            0% { transform: translateY(30px) scale(0.95); opacity: 0; }
-            100% { transform: translateY(0) scale(1); opacity: 1; }
+        @keyframes fadeInScale {
+            0% { transform: scale(0.9); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
         }
 
-        /* Tiêu đề Logo */
-        .success-header {
-            background: #f8fafc;
-            padding: 25px 20px;
-            border-bottom: 2px dashed #e2e8f0;
+        /* Logo to trên cùng */
+        .detail-header {
+            padding: 30px 20px 15px 20px;
             display: flex;
-            flex-direction: column;
-            align-items: center;
             justify-content: center;
+            align-items: center;
         }
-        .success-header img {
-            max-width: 150px;
-            max-height: 45px;
+        .detail-header img {
+            max-width: 200px; /* Logo cực to */
+            max-height: 65px;
             object-fit: contain;
         }
-        
-        .success-body { padding: 25px 20px; }
-        
-        .success-badge {
-            display: inline-block;
-            background: #d1fae5;
-            color: #059669;
-            padding: 6px 12px;
-            border-radius: 20px;
-            font-size: 13px;
-            font-weight: 700;
-            margin-bottom: 20px;
-        }
 
-        .info-row { margin-bottom: 15px; }
-        .info-label { font-size: 13px; color: #6b7280; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px;}
-        .info-value { font-size: 18px; color: #111827; font-weight: 700; margin-top: 4px; }
-        
-        /* Mã QR */
+        /* Khu vực QR Code */
+        .qr-section {
+            padding: 10px 20px 20px 20px;
+        }
         .qr-box {
-            margin-top: 25px;
-            padding: 15px;
-            background: #f1f5f9;
-            border-radius: 16px;
             display: inline-block;
+            padding: 15px;
+            background: #ffffff;
+            border-radius: 20px;
+            border: 2px dashed #cbd5e1;
         }
         .qr-box img {
-            width: 220px;
-            height: 220px;
+            width: 240px;
+            height: 240px;
             border-radius: 12px;
-            background: white;
-            padding: 10px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            
+            /* --- CSS CẤM NHẤN GIỮ LƯU ẢNH --- */
+            pointer-events: none; 
+            -webkit-touch-callout: none; 
+            -webkit-user-select: none; 
+            -khtml-user-select: none; 
+            -moz-user-select: none; 
+            -ms-user-select: none; 
+            user-select: none; 
+            -webkit-user-drag: none; 
         }
 
-        .success-footer { padding: 20px; background: #ffffff; }
+        /* Thông tin tài khoản */
+        .info-section {
+            background: #f8fafc;
+            padding: 25px 25px;
+            border-top: 1px solid #e2e8f0;
+            text-align: left;
+        }
+        .info-row {
+            margin-bottom: 18px;
+            display: flex;
+            flex-direction: column;
+        }
+        .info-row:last-child { margin-bottom: 0; }
+        
+        .info-label { 
+            font-size: 13px; 
+            color: #64748b; 
+            font-weight: 600; 
+            text-transform: uppercase; 
+            margin-bottom: 5px;
+        }
+        .info-value { 
+            font-size: 16px; 
+            color: #0f172a; 
+            font-weight: 700; 
+        }
+        .acc-number-highlight {
+            font-size: 24px;
+            color: #1e3a8a; /* Xanh đậm nổi bật */
+            letter-spacing: 1px;
+        }
+
+        /* Nút quay lại */
+        .detail-footer { padding: 20px; background: #ffffff; border-top: 1px solid #f1f5f9;}
         .reset-btn {
-            width: 100%; padding: 16px; background: #f3f4f6; color: #374151; 
+            width: 100%; padding: 15px; background: #f1f5f9; color: #334155; 
             border: none; border-radius: 12px; font-size: 15px; font-weight: 700; 
             cursor: pointer; transition: 0.2s;
         }
-        .reset-btn:hover { background: #e5e7eb; }
+        .reset-btn:hover { background: #e2e8f0; }
 
     </style>
 </head>
@@ -179,9 +188,9 @@
 
 <div class="app-container">
     
-    <!-- 1. GIAO DIỆN FORM NHẬP -->
+    <!-- === MÀN HÌNH 1: FORM NHẬP === -->
     <div class="form-card" id="formCard">
-        <h2>THÊM TÀI KHOẢN</h2>
+        <h2>Tạo Mã VietQR</h2>
         
         <div class="form-group">
             <label>Ngân hàng hưởng thụ</label>
@@ -197,47 +206,50 @@
         
         <div class="form-group">
             <label>Tên chủ tài khoản</label>
-            <input type="text" id="accName" placeholder="NGUYEN VAN A" oninput="this.value = this.value.toUpperCase()">
+            <input type="text" id="accName" placeholder="TÊN VIẾT HOA KHÔNG DẤU" oninput="this.value = this.value.toUpperCase()">
         </div>
         
-        <button class="submit-btn" id="submitBtn" onclick="submitForm()">
-            <div class="spinner" id="btnSpinner"></div>
-            <span id="btnText">Lưu & Tạo mã QR</span>
-        </button>
+        <button class="submit-btn" onclick="submitForm()">TẠO MÃ QR NGAY</button>
     </div>
 
-    <!-- 2. GIAO DIỆN BIÊN LAI THÀNH CÔNG -->
-    <div class="success-card" id="successCard">
-        <!-- Tiêu đề Logo ngân hàng -->
-        <div class="success-header">
-            <img id="resLogo" src="" alt="Bank Logo">
+    <!-- === MÀN HÌNH 2: XEM CHI TIẾT === -->
+    <div class="detail-card" id="detailCard">
+        
+        <!-- Tiêu đề Logo to -->
+        <div class="detail-header">
+            <img id="resLogo" src="" alt="Logo Ngân hàng">
         </div>
         
-        <div class="success-body">
-            <div class="success-badge">✓ LƯU THÀNH CÔNG</div>
-            
+        <!-- Mã QR (Đã chặn lưu ảnh) -->
+        <div class="qr-section">
+            <div class="qr-box">
+                <img id="resQrImg" src="" alt="Mã VietQR">
+            </div>
+            <div style="margin-top: 10px; font-size: 13px; color: #10b981; font-weight: 600;">
+                ✓ Quét mã bằng ứng dụng Ngân hàng
+            </div>
+        </div>
+        
+        <!-- Thông tin chi tiết -->
+        <div class="info-section">
             <div class="info-row">
                 <div class="info-label">Ngân hàng</div>
-                <div class="info-value" id="resBankName">Vietcombank</div>
+                <div class="info-value" id="resBankName">...</div>
             </div>
             
             <div class="info-row">
                 <div class="info-label">Số tài khoản</div>
-                <div class="info-value" id="resAccNumber" style="color: #3b82f6; font-size: 22px;">123456789</div>
+                <div class="info-value acc-number-highlight" id="resAccNumber">...</div>
             </div>
             
             <div class="info-row">
                 <div class="info-label">Chủ tài khoản</div>
-                <div class="info-value" id="resAccName">NGUYEN VAN A</div>
-            </div>
-            
-            <div class="qr-box">
-                <img id="resQrImg" src="" alt="VietQR">
+                <div class="info-value" id="resAccName">...</div>
             </div>
         </div>
         
-        <div class="success-footer">
-            <button class="reset-btn" onclick="resetForm()">Thêm tài khoản khác</button>
+        <div class="detail-footer">
+            <button class="reset-btn" onclick="resetForm()">Tạo tài khoản khác</button>
         </div>
     </div>
 
@@ -246,7 +258,7 @@
 <script>
     const API_URL = "https://script.google.com/macros/s/AKfycbwYJnl7kuWclf8wpfTqB_RHHlEuqnjRae9HtTUoQWvV8eKxJsihjXrOkq-QfNzETmVG/exec"; 
 
-    // --- 1. LẤY DANH SÁCH NGÂN HÀNG ---
+    // 1. TẢI DANH SÁCH NGÂN HÀNG
     async function loadBanks() {
         try {
             const res = await fetch("https://api.vietqr.io/v2/banks");
@@ -256,7 +268,7 @@
                 select.innerHTML = '<option value="">-- Chọn ngân hàng --</option>';
                 json.data.forEach(bank => {
                     const opt = document.createElement("option");
-                    opt.value = bank.bin; // Dùng BIN làm Mã PIN
+                    opt.value = bank.bin; // Mã PIN
                     opt.text = `${bank.shortName} - ${bank.name}`;
                     opt.dataset.shortname = bank.shortName;
                     opt.dataset.logo = bank.logo;
@@ -264,12 +276,11 @@
                 });
             }
         } catch (error) {
-            console.error("Lỗi:", error);
             document.getElementById("bankSelect").innerHTML = '<option value="">Lỗi mạng, hãy tải lại trang</option>';
         }
     }
 
-    // --- 2. HÀM TẠO ID & THỜI GIAN ---
+    // 2. HÀM TRỢ GIÚP TẠO ID & THỜI GIAN
     function generateID() {
         const now = new Date();
         const yy = String(now.getFullYear()).slice(-2);
@@ -292,8 +303,8 @@
         return `${hh}:${min}:${ss} ${dd}/${mm}/${now.getFullYear()}`;
     }
 
-    // --- 3. XỬ LÝ GỬI FORM ---
-    async function submitForm() {
+    // 3. XỬ LÝ LƯU NGAY LẬP TỨC
+    function submitForm() {
         const select = document.getElementById("bankSelect");
         const accNumber = document.getElementById("accNumber").value.trim();
         const accName = document.getElementById("accName").value.trim();
@@ -303,25 +314,26 @@
             return;
         }
 
-        // Đổi trạng thái nút bấm (Đang lưu...)
-        const btn = document.getElementById("submitBtn");
-        const spinner = document.getElementById("btnSpinner");
-        const btnText = document.getElementById("btnText");
-        
-        btn.disabled = true;
-        spinner.style.display = "block";
-        btnText.innerText = "Đang lưu lên hệ thống...";
-
-        // Lấy thông tin option đã chọn
+        // Lấy thông tin từ lựa chọn
         const selectedOption = select.options[select.selectedIndex];
         const bin = selectedOption.value; 
         const bankName = selectedOption.dataset.shortname; 
         const logo = selectedOption.dataset.logo; 
 
-        // URL Ảnh QR (W3qsUuN.jpg dùng template chuẩn của VietQR)
+        // Sinh link QR code
         const qrUrl = `https://api.vietqr.io/image/${bin}-${accNumber}-W3qsUuN.jpg?accountName=${encodeURIComponent(accName)}`;
 
-        // Tạo Payload chuẩn JSON bạn yêu cầu (Thay cột E,F,G,H)
+        // HIỂN THỊ MÀN HÌNH CHI TIẾT NGAY LẬP TỨC (Không cần đợi API)
+        document.getElementById("resLogo").src = logo;
+        document.getElementById("resBankName").innerText = bankName;
+        document.getElementById("resAccNumber").innerText = accNumber;
+        document.getElementById("resAccName").innerText = accName;
+        document.getElementById("resQrImg").src = qrUrl;
+
+        document.getElementById("formCard").style.display = "none";
+        document.getElementById("detailCard").style.display = "block";
+
+        // GỬI DỮ LIỆU LÊN GOOGLE SHEET Ở CHẾ ĐỘ NGẦM (BACKGROUND)
         const payload = { 
             sheet: "Ngân hàng", 
             action: "add", 
@@ -335,58 +347,30 @@
             H: logo
         };
 
-        try {
-            // Gửi qua Google Apps Script
-            const response = await fetch(API_URL, {
-                method: "POST",
-                headers: { "Content-Type": "text/plain;charset=utf-8" },
-                body: JSON.stringify(payload)
-            });
-            const result = await response.json();
-            
-            if (result.status === "success") {
-                showSuccessCard(bankName, logo, accNumber, accName, qrUrl);
-            } else {
-                alert("Lỗi từ máy chủ. Vui lòng thử lại!");
-            }
-        } catch (error) {
-            alert("Đã xảy ra lỗi mạng!");
-        } finally {
-            // Khôi phục nút bấm
-            btn.disabled = false;
-            spinner.style.display = "none";
-            btnText.innerText = "Lưu & Tạo mã QR";
-        }
+        // Hàm fetch chạy ngầm, người dùng không bị block UI
+        fetch(API_URL, {
+            method: "POST",
+            headers: { "Content-Type": "text/plain;charset=utf-8" },
+            body: JSON.stringify(payload)
+        }).then(response => response.json())
+          .then(result => {
+              console.log("Đã lưu ngầm thành công lên Google Sheet!", result);
+          }).catch(error => {
+              console.error("Lỗi khi lưu ngầm:", error);
+          });
     }
 
-    // --- 4. HIỂN THỊ MÀN HÌNH THÀNH CÔNG ---
-    function showSuccessCard(bankName, logo, accNumber, accName, qrUrl) {
-        // Gán dữ liệu vào Card
-        document.getElementById("resLogo").src = logo;
-        document.getElementById("resBankName").innerText = bankName;
-        document.getElementById("resAccNumber").innerText = accNumber;
-        document.getElementById("resAccName").innerText = accName;
-        document.getElementById("resQrImg").src = qrUrl;
-
-        // Ẩn Form, Hiện Card
-        document.getElementById("formCard").style.display = "none";
-        document.getElementById("successCard").style.display = "block";
-    }
-
-    // --- 5. QUAY LẠI FORM ĐỂ NHẬP TIẾP ---
+    // 4. RESET FORM ĐỂ TẠO MỚI
     function resetForm() {
         document.getElementById("accNumber").value = "";
         document.getElementById("accName").value = "";
         
-        document.getElementById("successCard").style.display = "none";
+        document.getElementById("detailCard").style.display = "none";
         document.getElementById("formCard").style.display = "block";
         document.getElementById("accNumber").focus();
     }
 
-    // Khi tải trang xong
-    window.onload = () => {
-        loadBanks();
-    };
+    window.onload = () => { loadBanks(); };
 </script>
 </body>
 </html>
