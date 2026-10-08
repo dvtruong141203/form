@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>QR Scanner & Offline Sync</title>
+    <title>QR Scanner & Offline History</title>
     <script src="https://unpkg.com/html5-qrcode"></script>
     <style>
         :root {
@@ -163,12 +163,19 @@
     let html5QrCode;
     let lastScannedCode = ""; 
     
-    let serverData = []; 
+    // Tải dữ liệu từ bộ nhớ máy lên ngay lập tức khi mở web
+    let serverData = JSON.parse(localStorage.getItem('qrServerData')) || []; 
     let localQueue = JSON.parse(localStorage.getItem('qrQueue')) || []; 
     let isSyncing = false;
 
+    // Lưu dữ liệu chưa gửi vào bộ nhớ máy
     function saveQueue() {
         localStorage.setItem('qrQueue', JSON.stringify(localQueue));
+    }
+
+    // Lưu toàn bộ dữ liệu đã đồng bộ thành công vào bộ nhớ máy (Lịch sử offline)
+    function saveServerData() {
+        localStorage.setItem('qrServerData', JSON.stringify(serverData));
     }
 
     function generateID() {
@@ -244,11 +251,6 @@
         });
     }
 
-    // Chuyển thông báo thành log ẩn thay vì hiển thị trên UI
-    function setStatus(text, type) {
-        console.log(`[${type.toUpperCase()}] ${text}`);
-    }
-
     // ĐỒNG BỘ DỮ LIỆU LÊN SERVER
     async function syncData() {
         if (isSyncing || localQueue.length === 0) return;
@@ -257,7 +259,6 @@
         while (localQueue.length > 0) {
             const currentItem = localQueue[0];
             try {
-                // Vẫn gửi lên API đầy đủ các trường A, B, C
                 const payload = { sheet: "QR", action: "add", A: currentItem.A, B: currentItem.B, C: currentItem.C };
                 const response = await fetch(API_URL, {
                     method: "POST",
@@ -269,7 +270,11 @@
                 if (result.status === "success") {
                     localQueue.shift(); 
                     saveQueue();
-                    if (result.all_data) serverData = result.all_data;
+                    // Lưu đè dữ liệu mới nhất từ server vào bộ nhớ máy
+                    if (result.all_data) {
+                        serverData = result.all_data;
+                        saveServerData(); 
+                    }
                     renderTable();
                 } else {
                     throw new Error("Server error");
@@ -288,8 +293,8 @@
     setInterval(syncData, 5000);
 
     async function loadInitialData() {
-        renderTable(); 
-        setStatus("Đang tải dữ liệu server...", "loading");
+        renderTable(); // Hiện dữ liệu trong bộ nhớ máy lên ngay lập tức!
+        
         try {
             const response = await fetch(API_URL, {
                 method: "POST",
@@ -299,17 +304,17 @@
             const result = await response.json();
             if (result && result.status === "success") {
                 serverData = result.all_data;
-                setStatus("Sẵn sàng quét QR", "success");
+                saveServerData(); // Cập nhật bộ nhớ máy bằng dữ liệu mới nhất
             }
         } catch (error) {
-            setStatus("Đang Offline! Dữ liệu quét sẽ được lưu tạm.", "error");
+            console.log("Đang Offline! Đang hiển thị lịch sử offline.");
         }
-        renderTable();
+        
+        renderTable(); // Làm mới lại bảng
         syncData(); 
     }
 
     function addDataToQueue(content) {
-        // ID (A) vẫn được khởi tạo ngầm để gửi lên sheet
         localQueue.push({ A: generateID(), B: generateTimestamp(), C: content, status: 'pending' });
         saveQueue();
         renderTable();
@@ -322,7 +327,6 @@
         setTimeout(() => { lastScannedCode = ""; }, 2000); 
         
         navigator.vibrate && navigator.vibrate(200);
-        setStatus(`Đã quét: ${decodedText}`, "success");
         addDataToQueue(decodedText);
     }
 
@@ -331,7 +335,6 @@
         const textValue = inputEl.value.trim();
         if (!textValue) { inputEl.focus(); return; }
 
-        setStatus(`Đã thêm: ${textValue}`, "success");
         inputEl.value = "";
         inputEl.focus();
         addDataToQueue(textValue);
@@ -351,11 +354,14 @@
         };
         html5QrCode.start({ facingMode: "environment" }, config, onScanSuccess)
         .catch(err => {
-            setStatus("Không thể mở Camera.", "error");
+            console.log("Không thể mở Camera.");
         });
     }
 
-    window.onload = () => { loadInitialData(); startCamera(); };
+    window.onload = () => { 
+        loadInitialData(); 
+        startCamera(); 
+    };
 
     document.addEventListener("visibilitychange", () => {
         if (document.visibilityState === "hidden") {
