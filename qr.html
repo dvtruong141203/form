@@ -21,9 +21,9 @@
             display: flex; flex-direction: column; align-items: center; 
             color: var(--text-color);
         }
-        .container { max-width: 750px; width: 100%; }
         
-        /* Thông báo chung */
+        .container { max-width: 600px; width: 100%; }
+        
         #status { 
             text-align: center; font-size: 14px; font-weight: 600; 
             margin-bottom: 15px; padding: 10px; border-radius: 8px;
@@ -33,78 +33,90 @@
         .success { color: #27ae60; background: #eaeded !important; }
         .error { color: #c0392b; background: #fadbd8 !important; }
 
-        /* Khung Camera */
+        #reader-container { display: flex; justify-content: center; margin-bottom: 15px; }
         #reader { 
-            width: 100%; border-radius: var(--border-radius); overflow: hidden; 
-            background: #000; box-shadow: 0 4px 12px rgba(0,0,0,0.1); 
-            margin-bottom: 20px; border: 2px solid #fff;
+            width: 100%; max-width: 350px;
+            border-radius: var(--border-radius); overflow: hidden; 
+            background: #000; box-shadow: 0 4px 12px rgba(0,0,0,0.15); 
+            border: 2px solid #fff;
         }
         
-        /* Khu vực nhập thủ công */
         .manual-entry { 
             display: flex; gap: 10px; margin-bottom: 20px; 
-            background: var(--box-bg); padding: 15px; 
+            background: var(--box-bg); padding: 12px; 
             border-radius: var(--border-radius); box-shadow: 0 4px 12px rgba(0,0,0,0.05);
         }
         .manual-entry input { 
-            flex: 1; padding: 12px 15px; border: 1px solid #dcdfe6; 
-            border-radius: 8px; font-size: 15px; outline: none; transition: 0.2s;
+            flex: 1; padding: 10px 12px; border: 1px solid #dcdfe6; 
+            border-radius: 8px; font-size: 14px; outline: none; transition: 0.2s;
         }
         .manual-entry input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(0,123,255,0.1); }
         .manual-entry button { 
-            padding: 0 25px; background: var(--primary); color: white; 
-            border: none; border-radius: 8px; font-size: 15px; font-weight: bold; 
+            padding: 0 20px; background: var(--primary); color: white; 
+            border: none; border-radius: 8px; font-size: 14px; font-weight: bold; 
             cursor: pointer; transition: 0.2s; white-space: nowrap;
         }
         .manual-entry button:hover { background: var(--primary-hover); }
 
-        /* Bảng dữ liệu */
         .table-container { 
             width: 100%; background: var(--box-bg); border-radius: var(--border-radius); 
             box-shadow: 0 4px 12px rgba(0,0,0,0.05); overflow: hidden;
         }
-        .table-wrapper { max-height: 500px; overflow-y: auto; }
-        table { width: 100%; border-collapse: collapse; min-width: 650px; }
+        .table-wrapper { max-height: 400px; overflow-y: auto; }
+        table { width: 100%; border-collapse: collapse; min-width: 450px; }
         thead th { 
             position: sticky; top: 0; background-color: #f8f9fa; 
             color: #495057; border-bottom: 2px solid #dee2e6; z-index: 1;
-            padding: 12px 15px; text-align: left; font-size: 14px;
+            padding: 10px; text-align: left; font-size: 13px;
         }
-        tbody td { padding: 12px 15px; border-bottom: 1px solid #eee; text-align: left; font-size: 14px; vertical-align: middle; }
-        tbody tr:hover { background-color: #f8f9fa; }
+        tbody td { 
+            padding: 10px; border-bottom: 1px solid #eee; 
+            text-align: left; font-size: 13px; vertical-align: middle; 
+        }
         
-        /* --- STYLE BADGE TÔ MÀU TRẠNG THÁI --- */
-        .status-badge {
-            display: inline-flex;
-            align-items: center;
-            padding: 6px 12px;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: 700;
+        tbody tr { cursor: pointer; transition: background-color 0.2s;}
+        tbody tr:hover { background-color: #e9ecef !important; }
+        
+        .content-cell {
+            max-width: 120px;
             white-space: nowrap;
-        }
-        /* 1. Đang xử lí (Màu vàng/cam) */
-        .badge-processing {
-            background-color: #fff3cd;
-            color: #856404;
-            border: 1px solid #ffeeba;
-        }
-        /* 2. Thành công (Màu xanh lá) */
-        .badge-success {
-            background-color: #d4edda;
-            color: #155724;
-            border: 1px solid #c3e6cb;
-        }
-        /* 3. Thất bại (Màu đỏ) */
-        .badge-failed {
-            background-color: #f8d7da;
-            color: #721c24;
-            border: 1px solid #f5c6cb;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            font-weight: 600;
         }
         
-        /* Tô màu nền nhạt cho dòng đang chờ xử lý để dễ phân biệt */
+        .status-badge {
+            display: inline-flex; align-items: center; padding: 4px 8px;
+            border-radius: 20px; font-size: 11px; font-weight: 700; white-space: nowrap;
+        }
+        .badge-processing { background-color: #fff3cd; color: #856404; border: 1px solid #ffeeba; }
+        .badge-success { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .badge-failed { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
         .row-processing { background-color: #fcfbf6; }
         .row-failed { background-color: #fdfafb; }
+
+        .modal-overlay {
+            display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.5); z-index: 1000;
+            align-items: center; justify-content: center; padding: 20px;
+            opacity: 0; transition: opacity 0.3s ease;
+        }
+        .modal-overlay.show { display: flex; opacity: 1; }
+        .modal-content {
+            background: #fff; padding: 20px; border-radius: 12px;
+            width: 100%; max-width: 350px; box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+            transform: translateY(-20px); transition: transform 0.3s ease;
+        }
+        .modal-overlay.show .modal-content { transform: translateY(0); }
+        .modal-header { border-bottom: 1px solid #eee; margin-bottom: 15px; padding-bottom: 10px; }
+        .modal-header h3 { margin: 0; color: #007bff; font-size: 18px; text-align: center; }
+        .modal-body p { margin: 10px 0; font-size: 14px; line-height: 1.5; word-wrap: break-word; }
+        .modal-body strong { color: #555; }
+        .modal-close-btn {
+            width: 100%; padding: 10px; margin-top: 15px; background: #6c757d; color: white;
+            border: none; border-radius: 8px; font-weight: bold; cursor: pointer;
+        }
+        .modal-close-btn:hover { background: #5a6268; }
     </style>
 </head>
 <body>
@@ -112,23 +124,22 @@
 <div class="container">
     <div id="status">Đang khởi tạo ứng dụng...</div>
     
-    <!-- Khung quét QR -->
-    <div id="reader"></div>
+    <div id="reader-container">
+        <div id="reader"></div>
+    </div>
 
-    <!-- Khu vực nhập thủ công -->
     <div class="manual-entry">
-        <input type="text" id="manualInput" placeholder="Hoặc nhập mã thủ công vào đây...">
+        <input type="text" id="manualInput" placeholder="Nhập mã thủ công...">
         <button id="manualBtn" onclick="submitManual()">Gửi</button>
     </div>
 
-    <!-- Bảng dữ liệu phía dưới -->
     <div class="table-container">
         <div class="table-wrapper">
             <table>
                 <thead>
                     <tr>
-                        <th style="width: 22%">ID</th>
-                        <th style="width: 28%">Thời gian</th>
+                        <th style="width: 25%">ID</th>
+                        <th style="width: 25%">Thời gian</th>
                         <th style="width: 30%">Nội dung</th>
                         <th style="width: 20%">Trạng thái</th>
                     </tr>
@@ -141,15 +152,30 @@
     </div>
 </div>
 
+<div id="detailModal" class="modal-overlay" onclick="closeModal()">
+    <div class="modal-content" onclick="event.stopPropagation()">
+        <div class="modal-header">
+            <h3>Chi tiết Dữ liệu</h3>
+        </div>
+        <div class="modal-body">
+            <p><strong>ID:</strong> <span id="modalId"></span></p>
+            <p><strong>Thời gian:</strong> <span id="modalTime"></span></p>
+            <p><strong>Trạng thái:</strong> <span id="modalStatus"></span></p>
+            <p><strong>Nội dung:</strong></p>
+            <p id="modalContent" style="background: #f8f9fa; padding: 10px; border-radius: 6px; border: 1px solid #ddd;"></p>
+        </div>
+        <button class="modal-close-btn" onclick="closeModal()">Đóng</button>
+    </div>
+</div>
+
 <script>
     const API_URL = "https://script.google.com/macros/s/AKfycbwYJnl7kuWclf8wpfTqB_RHHlEuqnjRae9HtTUoQWvV8eKxJsihjXrOkq-QfNzETmVG/exec"; 
     
     let html5QrCode;
     let lastScannedCode = ""; 
     
-    // Quản lý Dữ liệu
-    let serverData = []; // Dữ liệu đã lưu thành công
-    let localQueue = JSON.parse(localStorage.getItem('qrQueue')) || []; // Dữ liệu chưa lưu (chờ đồng bộ)
+    let serverData = []; 
+    let localQueue = JSON.parse(localStorage.getItem('qrQueue')) || []; 
     let isSyncing = false;
 
     function saveQueue() {
@@ -175,11 +201,21 @@
         const ss = String(now.getSeconds()).padStart(2, '0');
         const dd = String(now.getDate()).padStart(2, '0');
         const mm = String(now.getMonth() + 1).padStart(2, '0');
-        const yyyy = now.getFullYear();
-        return `${hh}:${min}:${ss} ${dd}/${mm}/${yyyy}`;
+        return `${hh}:${min}:${ss} ${dd}/${mm}/${now.getFullYear()}`;
     }
 
-    // Hiển thị Bảng
+    function openModal(id, time, content, statusHtml) {
+        document.getElementById("modalId").innerText = id;
+        document.getElementById("modalTime").innerText = time;
+        document.getElementById("modalContent").innerText = content;
+        document.getElementById("modalStatus").innerHTML = statusHtml;
+        document.getElementById("detailModal").classList.add("show");
+    }
+
+    function closeModal() {
+        document.getElementById("detailModal").classList.remove("show");
+    }
+
     function renderTable() {
         const tbody = document.getElementById("dataTableBody");
         tbody.innerHTML = "";
@@ -189,33 +225,35 @@
             return;
         }
 
-        // 1. Dữ liệu chưa lưu / lỗi (Local Queue)
+        // Dữ liệu Offline / Chờ xử lý (Nội dung dùng cột C)
         localQueue.slice().reverse().forEach(row => {
             const tr = document.createElement("tr");
-            
-            // Xử lý text và class cho Trạng thái
             let statusText = row.status === 'error' ? '⚠️ Thất bại' : '⏳ Đang xử lí';
             let badgeClass = row.status === 'error' ? 'badge-failed' : 'badge-processing';
-            tr.className = row.status === 'error' ? 'row-failed' : 'row-processing';
+            let statusHtml = `<span class="status-badge ${badgeClass}">${statusText}</span>`;
             
+            tr.className = row.status === 'error' ? 'row-failed' : 'row-processing';
             tr.innerHTML = `
                 <td>${row.A}</td>
                 <td>${row.B}</td>
-                <td><strong>${row.E}</strong></td>
-                <td><span class="status-badge ${badgeClass}">${statusText}</span></td>
+                <td class="content-cell" title="Nhấn để xem chi tiết">${row.C}</td>
+                <td>${statusHtml}</td>
             `;
+            tr.addEventListener('click', () => openModal(row.A, row.B, row.C, statusHtml));
             tbody.appendChild(tr);
         });
 
-        // 2. Dữ liệu đã lưu (Server Data)
+        // Dữ liệu Đã lưu trên Server (Nội dung dùng cột C)
         serverData.slice().reverse().forEach(row => {
             const tr = document.createElement("tr");
+            let statusHtml = `<span class="status-badge badge-success">✅ Thành công</span>`;
             tr.innerHTML = `
                 <td>${row.A || ''}</td>
                 <td>${row.B || ''}</td>
-                <td><strong>${row.E || ''}</strong></td>
-                <td><span class="status-badge badge-success">✅ Thành công</span></td>
+                <td class="content-cell" title="Nhấn để xem chi tiết">${row.C || ''}</td>
+                <td>${statusHtml}</td>
             `;
+            tr.addEventListener('click', () => openModal(row.A, row.B, row.C, statusHtml));
             tbody.appendChild(tr);
         });
     }
@@ -234,7 +272,7 @@
         }
     }
 
-    // ĐỒNG BỘ DỮ LIỆU LÊN SERVER
+    // ĐỒNG BỘ DỮ LIỆU LÊN SERVER (Gửi biến C)
     async function syncData() {
         if (isSyncing || localQueue.length === 0) return;
         isSyncing = true;
@@ -242,7 +280,7 @@
         while (localQueue.length > 0) {
             const currentItem = localQueue[0];
             try {
-                const payload = { sheet: "QR", action: "add", A: currentItem.A, B: currentItem.B, E: currentItem.E };
+                const payload = { sheet: "QR", action: "add", A: currentItem.A, B: currentItem.B, C: currentItem.C };
                 const response = await fetch(API_URL, {
                     method: "POST",
                     headers: { "Content-Type": "text/plain;charset=utf-8" },
@@ -251,7 +289,7 @@
                 const result = await response.json();
                 
                 if (result.status === "success") {
-                    localQueue.shift(); // Xóa khỏi hàng đợi khi thành công
+                    localQueue.shift(); 
                     saveQueue();
                     if (result.all_data) serverData = result.all_data;
                     renderTable();
@@ -260,10 +298,10 @@
                 }
             } catch (error) {
                 console.error("Lỗi đồng bộ:", error);
-                localQueue[0].status = 'error'; // Đánh dấu Thất bại
+                localQueue[0].status = 'error'; 
                 saveQueue();
                 renderTable();
-                break; // Ngừng vòng lặp để đợi 5s sau gọi lại
+                break; 
             }
         }
         isSyncing = false;
@@ -283,19 +321,17 @@
             const result = await response.json();
             if (result && result.status === "success") {
                 serverData = result.all_data;
-                setStatus("Sẵn sàng quét QR hoặc Nhập thủ công", "success");
+                setStatus("Sẵn sàng quét QR", "success");
             }
         } catch (error) {
-            setStatus("Đang Offline! Dữ liệu quét sẽ được lưu tạm ở máy.", "error");
+            setStatus("Đang Offline! Dữ liệu quét sẽ được lưu tạm.", "error");
         }
         renderTable();
         syncData(); 
     }
 
     function addDataToQueue(content) {
-        const id = generateID();
-        const time = generateTimestamp();
-        localQueue.push({ A: id, B: time, E: content, status: 'pending' });
+        localQueue.push({ A: generateID(), B: generateTimestamp(), C: content, status: 'pending' });
         saveQueue();
         renderTable();
         syncData();
@@ -323,22 +359,20 @@
     }
 
     document.getElementById("manualInput").addEventListener("keypress", function(event) {
-        if (event.key === "Enter") {
-            event.preventDefault();
-            submitManual();
-        }
+        if (event.key === "Enter") { event.preventDefault(); submitManual(); }
     });
 
     function startCamera() {
         html5QrCode = new Html5Qrcode("reader");
         const config = {
-            fps: 30, qrbox: { width: 250, height: 250 }, aspectRatio: 1.0,
-            videoConstraints: { facingMode: "environment", width: { ideal: 1920 }, height: { ideal: 1080 } }
+            fps: 30, 
+            qrbox: { width: 200, height: 200 }, 
+            aspectRatio: 1.0,
+            videoConstraints: { facingMode: "environment", width: { ideal: 1280 }, height: { ideal: 720 } }
         };
         html5QrCode.start({ facingMode: "environment" }, config, onScanSuccess)
         .catch(err => {
-            setStatus("Không thể mở Camera. Vẫn có thể nhập tay bình thường.", "error");
-            console.error(err);
+            setStatus("Không thể mở Camera.", "error");
         });
     }
 
@@ -346,7 +380,7 @@
 
     document.addEventListener("visibilitychange", () => {
         if (document.visibilityState === "hidden") {
-            if (html5QrCode && html5QrCode.isScanning) html5QrCode.stop().catch(err => console.log(err));
+            if (html5QrCode && html5QrCode.isScanning) html5QrCode.stop().catch(e => console.log(e));
         } else if (document.visibilityState === "visible") {
             if (html5QrCode && !html5QrCode.isScanning) startCamera();
             syncData();
