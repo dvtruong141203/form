@@ -3,56 +3,121 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>QR Scanner</title>
+    <title>QR Scanner & Data Entry</title>
     <script src="https://unpkg.com/html5-qrcode"></script>
     <style>
-        body { font-family: Arial, sans-serif; margin: 0; padding: 20px; background: #f4f7f6; display: flex; flex-direction: column; align-items: center; }
-        .container { max-width: 600px; width: 100%; }
-        #reader { width: 100%; border-radius: 8px; overflow: hidden; background: #000; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 20px; }
-        .table-container { width: 100%; overflow-x: auto; background: #fff; padding: 15px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        :root {
+            --primary: #007bff;
+            --primary-hover: #0056b3;
+            --bg-color: #f0f2f5;
+            --box-bg: #ffffff;
+            --text-color: #333;
+            --border-radius: 12px;
+        }
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
+            margin: 0; padding: 15px; 
+            background: var(--bg-color); 
+            display: flex; flex-direction: column; align-items: center; 
+            color: var(--text-color);
+        }
+        .container { max-width: 700px; width: 100%; }
+        
+        /* Trạng thái */
+        #status { 
+            text-align: center; font-size: 14px; font-weight: 600; 
+            margin-bottom: 15px; padding: 10px; border-radius: 8px;
+            background: #e9ecef; transition: all 0.3s;
+        }
+        .loading { color: #d35400; background: #fdebd0 !important; }
+        .success { color: #27ae60; background: #eaeded !important; }
+        .error { color: #c0392b; background: #fadbd8 !important; }
+
+        /* Khung Camera */
+        #reader { 
+            width: 100%; border-radius: var(--border-radius); overflow: hidden; 
+            background: #000; box-shadow: 0 4px 12px rgba(0,0,0,0.1); 
+            margin-bottom: 20px; border: 2px solid #fff;
+        }
+        
+        /* Khu vực nhập thủ công */
+        .manual-entry { 
+            display: flex; gap: 10px; margin-bottom: 20px; 
+            background: var(--box-bg); padding: 15px; 
+            border-radius: var(--border-radius); box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        }
+        .manual-entry input { 
+            flex: 1; padding: 12px 15px; border: 1px solid #dcdfe6; 
+            border-radius: 8px; font-size: 15px; outline: none; transition: 0.2s;
+        }
+        .manual-entry input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(0,123,255,0.1); }
+        .manual-entry button { 
+            padding: 0 25px; background: var(--primary); color: white; 
+            border: none; border-radius: 8px; font-size: 15px; font-weight: bold; 
+            cursor: pointer; transition: 0.2s; white-space: nowrap;
+        }
+        .manual-entry button:hover { background: var(--primary-hover); }
+        .manual-entry button:disabled { background: #a0c4ff; cursor: not-allowed; }
+
+        /* Bảng dữ liệu */
+        .table-container { 
+            width: 100%; background: var(--box-bg); border-radius: var(--border-radius); 
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05); overflow: hidden;
+        }
+        .table-wrapper { max-height: 500px; overflow-y: auto; }
         table { width: 100%; border-collapse: collapse; min-width: 500px; }
-        th, td { padding: 10px; border: 1px solid #ddd; text-align: left; font-size: 14px; }
-        th { background-color: #007bff; color: white; }
-        #status { text-align: center; font-weight: bold; margin-bottom: 15px; color: #333; }
-        .loading { color: #f39c12; }
-        .success { color: #27ae60; }
-        .error { color: #e74c3c; }
+        thead th { 
+            position: sticky; top: 0; background-color: #f8f9fa; 
+            color: #495057; border-bottom: 2px solid #dee2e6; z-index: 1;
+        }
+        th, td { padding: 12px 15px; border-bottom: 1px solid #eee; text-align: left; font-size: 14px; }
+        tbody tr:hover { background-color: #f8f9fa; }
+        
+        /* Dòng dữ liệu đang chờ xử lý */
+        .row-pending { background-color: #fff3cd !important; color: #856404; font-style: italic; }
+        .row-pending td:last-child::after { content: " (Đang gửi...)"; font-size: 12px; color: #e67e22; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <div id="status">Đang khởi tạo máy ảnh...</div>
+    <div id="status">Đang khởi tạo ứng dụng...</div>
     
     <!-- Khung quét QR -->
     <div id="reader"></div>
 
+    <!-- Khu vực nhập thủ công -->
+    <div class="manual-entry">
+        <input type="text" id="manualInput" placeholder="Hoặc nhập mã thủ công vào đây...">
+        <button id="manualBtn" onclick="submitManual()">Gửi</button>
+    </div>
+
     <!-- Bảng dữ liệu phía dưới -->
     <div class="table-container">
-        <table>
-            <thead>
-                <tr>
-                    <th>STT (Row)</th>
-                    <th>Mã ID (Cột A)</th>
-                    <th>Thời gian (Cột B)</th>
-                    <th>Nội dung QR (Cột E)</th>
-                </tr>
-            </thead>
-            <tbody id="dataTableBody">
-                <tr><td colspan="4" style="text-align: center;">Đang tải dữ liệu...</td></tr>
-            </tbody>
-        </table>
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width: 25%">ID</th>
+                        <th style="width: 30%">Thời gian</th>
+                        <th style="width: 45%">Nội dung</th>
+                    </tr>
+                </thead>
+                <tbody id="dataTableBody">
+                    <tr><td colspan="3" style="text-align: center; padding: 20px;">Đang tải dữ liệu...</td></tr>
+                </tbody>
+            </table>
+        </div>
     </div>
 </div>
 
 <script>
-    // Link Google Apps Script Web App của bạn
     const API_URL = "https://script.google.com/macros/s/AKfycbwYJnl7kuWclf8wpfTqB_RHHlEuqnjRae9HtTUoQWvV8eKxJsihjXrOkq-QfNzETmVG/exec"; 
     
     let html5QrCode;
-    let isProcessing = false; // Chống quét liên tục cùng 1 mã khi đang chờ API
+    let lastScannedCode = ""; // Lưu mã vừa quét để tránh quét trùng lặp liên tục
 
-    // Hàm tạo định dạng ID (YYMMDDHHMMSS + 2 số ngẫu nhiên)
+    // Helper: Tạo ID
     function generateID() {
         const now = new Date();
         const yy = String(now.getFullYear()).slice(-2);
@@ -65,7 +130,7 @@
         return `${yy}${mm}${dd}${hh}${min}${ss}${rand}`;
     }
 
-    // Hàm tạo định dạng thời gian (hh:mm:ss dd/mm/yyyy)
+    // Helper: Tạo Timestamp
     function generateTimestamp() {
         const now = new Date();
         const hh = String(now.getHours()).padStart(2, '0');
@@ -77,36 +142,62 @@
         return `${hh}:${min}:${ss} ${dd}/${mm}/${yyyy}`;
     }
 
-    // Render bảng dữ liệu
+    // Render toàn bộ bảng (Khi có dữ liệu từ Server)
     function renderTable(dataArray) {
         const tbody = document.getElementById("dataTableBody");
         tbody.innerHTML = "";
         if (!dataArray || dataArray.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="4" style="text-align: center;">Chưa có dữ liệu</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="3" style="text-align: center; padding: 20px;">Chưa có dữ liệu</td></tr>`;
             return;
         }
         
-        // Render ngược để mã mới quét hiện lên đầu
         dataArray.slice().reverse().forEach(row => {
             const tr = document.createElement("tr");
             tr.innerHTML = `
-                <td>${row.row || '-'}</td>
                 <td>${row.A || ''}</td>
                 <td>${row.B || ''}</td>
-                <td>${row.E || ''}</td>
+                <td><strong>${row.E || ''}</strong></td>
             `;
             tbody.appendChild(tr);
         });
     }
 
-    // Hiển thị trạng thái
+    // Cập nhật giao diện NGAY LẬP TỨC khi vừa quét/nhập (Optimistic UI)
+    function addOptimisticRow(id, time, content) {
+        const tbody = document.getElementById("dataTableBody");
+        // Xóa dòng "Chưa có dữ liệu" nếu có
+        if(tbody.innerText.includes("Chưa có dữ liệu") || tbody.innerText.includes("Đang tải")) {
+            tbody.innerHTML = "";
+        }
+        
+        const tr = document.createElement("tr");
+        tr.className = "row-pending"; // Thêm class đánh dấu đang xử lý
+        tr.innerHTML = `
+            <td>${id}</td>
+            <td>${time}</td>
+            <td><strong>${content}</strong></td>
+        `;
+        tbody.prepend(tr); // Chèn lên đầu bảng ngay lập tức
+    }
+
+    // Đổi trạng thái hiển thị text
     function setStatus(text, type) {
         const statusEl = document.getElementById("status");
         statusEl.textContent = text;
         statusEl.className = type;
+        
+        // Tự động clear trạng thái sau 3 giây nếu là success/error
+        if (type === 'success' || type === 'error') {
+            setTimeout(() => {
+                if (statusEl.textContent === text) {
+                    statusEl.textContent = "Đang chờ quét hoặc nhập liệu...";
+                    statusEl.className = "";
+                }
+            }, 3000);
+        }
     }
 
-    // Gửi Request tới Server (Google Apps Script)
+    // Gửi API ngầm định
     async function sendRequest(payload) {
         try {
             const response = await fetch(API_URL, {
@@ -115,108 +206,121 @@
                 body: JSON.stringify(payload)
             });
             const result = await response.json();
+            // Thành công -> Đồng bộ lại bảng bằng data thật từ server
             if (result.status === "success" && result.all_data) {
                 renderTable(result.all_data);
             }
             return result;
         } catch (error) {
             console.error("API Error:", error);
-            setStatus("Lỗi kết nối máy chủ!", "error");
+            setStatus("Có lỗi mạng ngầm, vui lòng kiểm tra kết nối!", "error");
             return null;
         }
     }
 
-    // Lấy dữ liệu lúc mới vào web
+    // Lấy data ban đầu
     async function loadInitialData() {
         setStatus("Đang tải dữ liệu...", "loading");
         const payload = { sheet: "QR", action: "get" };
         const result = await sendRequest(payload);
         if (result && result.status === "success") {
-            setStatus("Sẵn sàng quét QR", "success");
+            setStatus("Sẵn sàng quét QR hoặc Nhập thủ công", "success");
         }
     }
 
-    // Hàm xử lý khi quét được QR
-    async function onScanSuccess(decodedText) {
-        if (isProcessing) return; // Đang gửi API thì không quét mã tiếp
-        isProcessing = true;
+    // Xử lý khi Quét QR thành công
+    function onScanSuccess(decodedText) {
+        // Chống spam quét cùng 1 mã liên tục trong vòng 2 giây
+        if (decodedText === lastScannedCode) return; 
+        lastScannedCode = decodedText;
+        setTimeout(() => { lastScannedCode = ""; }, 2000); 
         
-        // Play âm thanh bíp nhẹ (tuỳ chọn)
         navigator.vibrate && navigator.vibrate(200);
-        setStatus(`Đã quét: ${decodedText}... Đang lưu!`, "loading");
+        setStatus(`Đã quét: ${decodedText}`, "success");
 
-        const payload = {
-            sheet: "QR",
-            action: "add",
-            A: generateID(),
-            B: generateTimestamp(),
-            E: decodedText
-        };
+        const id = generateID();
+        const time = generateTimestamp();
 
-        const result = await sendRequest(payload);
-        if (result && result.status === "success") {
-            setStatus("Thêm dữ liệu thành công! Tiếp tục quét.", "success");
-        } else {
-            setStatus("Lỗi lưu dữ liệu. Hãy thử lại.", "error");
-        }
-        
-        // Delay 1.5s trước khi cho quét mã tiếp theo để tránh trùng
-        setTimeout(() => { isProcessing = false; }, 1500);
+        // 1. Hiển thị ngay lên bảng (Chưa cần chờ API)
+        addOptimisticRow(id, time, decodedText);
+
+        // 2. Gửi API ngầm (Không block người dùng quét mã tiếp theo)
+        const payload = { sheet: "QR", action: "add", A: id, B: time, E: decodedText };
+        sendRequest(payload);
     }
 
-    // Khởi tạo máy quét Camera
+    // --- TÍNH NĂNG NHẬP THỦ CÔNG ---
+    function submitManual() {
+        const inputEl = document.getElementById("manualInput");
+        const textValue = inputEl.value.trim();
+
+        if (!textValue) {
+            inputEl.focus();
+            return;
+        }
+
+        setStatus(`Đã thêm: ${textValue}`, "success");
+        inputEl.value = ""; // Xóa ô nhập ngay lập tức để người dùng nhập mã khác
+        inputEl.focus();
+
+        const id = generateID();
+        const time = generateTimestamp();
+
+        // 1. Hiển thị ngay lên bảng
+        addOptimisticRow(id, time, textValue);
+
+        // 2. Gửi API ngầm
+        const payload = { sheet: "QR", action: "add", A: id, B: time, E: textValue };
+        sendRequest(payload);
+    }
+
+    // Hỗ trợ bấm Enter để nhập tay
+    document.getElementById("manualInput").addEventListener("keypress", function(event) {
+        if (event.key === "Enter") {
+            event.preventDefault();
+            submitManual();
+        }
+    });
+
+    // Khởi tạo Camera
     function startCamera() {
         html5QrCode = new Html5Qrcode("reader");
-        
-        // Cấu hình: độ phân giải cao (1080p), tốc độ 30fps (không giật), có khung quét (qrbox)
         const config = {
             fps: 30,
             qrbox: { width: 250, height: 250 },
             aspectRatio: 1.0,
-            videoConstraints: {
-                facingMode: "environment", // Camera sau
-                width: { ideal: 1920 },
-                height: { ideal: 1080 }
-            }
+            videoConstraints: { facingMode: "environment", width: { ideal: 1920 }, height: { ideal: 1080 } }
         };
 
-        html5QrCode.start(
-            { facingMode: "environment" }, 
-            config, 
-            onScanSuccess
-        ).catch(err => {
-            setStatus("Không thể mở Camera. Vui lòng cấp quyền!", "error");
+        html5QrCode.start({ facingMode: "environment" }, config, onScanSuccess)
+        .catch(err => {
+            setStatus("Không thể mở Camera (Có thể do thiếu quyền hoặc dùng trên máy tính không có cam).", "error");
             console.error(err);
         });
     }
 
-    // --- CÁC SỰ KIỆN VÒNG ĐỜI TRANG WEB ---
-
-    // 1. Lúc mới vào trang: lấy data và bật camera
+    // --- VÒNG ĐỜI TRANG WEB ---
     window.onload = () => {
         loadInitialData();
         startCamera();
     };
 
-    // 2. Tắt camera khi rời khỏi tab/chuyển ứng dụng
+    // Tắt cam khi rời trang để tiết kiệm pin
     document.addEventListener("visibilitychange", () => {
         if (document.visibilityState === "hidden") {
             if (html5QrCode && html5QrCode.isScanning) {
-                html5QrCode.stop().then(() => console.log("Camera stopped (hidden)")).catch(err => console.log(err));
+                html5QrCode.stop().catch(err => console.log(err));
             }
         } else if (document.visibilityState === "visible") {
-            // Bật lại khi quay lại web (Nếu muốn)
             if (html5QrCode && !html5QrCode.isScanning) {
                 startCamera();
             }
         }
     });
 
-    // 3. Đảm bảo tắt camera khi đóng trang web (Before Unload)
+    // Hủy cam khi đóng trình duyệt
     window.addEventListener("beforeunload", () => {
-        if (html5QrCode && html5QrCode.isScanning) {
-            html5QrCode.stop();
-        }
+        if (html5QrCode && html5QrCode.isScanning) html5QrCode.stop();
     });
 
 </script>
