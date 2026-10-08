@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>QR Scanner & Data Entry</title>
+    <title>QR Scanner & Offline Sync</title>
     <script src="https://unpkg.com/html5-qrcode"></script>
     <style>
         :root {
             --primary: #007bff;
             --primary-hover: #0056b3;
-            --bg-color: #f0f2f5;
+            --bg-color: #f4f7f6;
             --box-bg: #ffffff;
             --text-color: #333;
             --border-radius: 12px;
@@ -21,9 +21,9 @@
             display: flex; flex-direction: column; align-items: center; 
             color: var(--text-color);
         }
-        .container { max-width: 700px; width: 100%; }
+        .container { max-width: 750px; width: 100%; }
         
-        /* Trạng thái */
+        /* Thông báo chung */
         #status { 
             text-align: center; font-size: 14px; font-weight: 600; 
             margin-bottom: 15px; padding: 10px; border-radius: 8px;
@@ -57,7 +57,6 @@
             cursor: pointer; transition: 0.2s; white-space: nowrap;
         }
         .manual-entry button:hover { background: var(--primary-hover); }
-        .manual-entry button:disabled { background: #a0c4ff; cursor: not-allowed; }
 
         /* Bảng dữ liệu */
         .table-container { 
@@ -65,17 +64,47 @@
             box-shadow: 0 4px 12px rgba(0,0,0,0.05); overflow: hidden;
         }
         .table-wrapper { max-height: 500px; overflow-y: auto; }
-        table { width: 100%; border-collapse: collapse; min-width: 500px; }
+        table { width: 100%; border-collapse: collapse; min-width: 650px; }
         thead th { 
             position: sticky; top: 0; background-color: #f8f9fa; 
             color: #495057; border-bottom: 2px solid #dee2e6; z-index: 1;
+            padding: 12px 15px; text-align: left; font-size: 14px;
         }
-        th, td { padding: 12px 15px; border-bottom: 1px solid #eee; text-align: left; font-size: 14px; }
+        tbody td { padding: 12px 15px; border-bottom: 1px solid #eee; text-align: left; font-size: 14px; vertical-align: middle; }
         tbody tr:hover { background-color: #f8f9fa; }
         
-        /* Dòng dữ liệu đang chờ xử lý */
-        .row-pending { background-color: #fff3cd !important; color: #856404; font-style: italic; }
-        .row-pending td:last-child::after { content: " (Đang gửi...)"; font-size: 12px; color: #e67e22; }
+        /* --- STYLE BADGE TÔ MÀU TRẠNG THÁI --- */
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 700;
+            white-space: nowrap;
+        }
+        /* 1. Đang xử lí (Màu vàng/cam) */
+        .badge-processing {
+            background-color: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeeba;
+        }
+        /* 2. Thành công (Màu xanh lá) */
+        .badge-success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        /* 3. Thất bại (Màu đỏ) */
+        .badge-failed {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        /* Tô màu nền nhạt cho dòng đang chờ xử lý để dễ phân biệt */
+        .row-processing { background-color: #fcfbf6; }
+        .row-failed { background-color: #fdfafb; }
     </style>
 </head>
 <body>
@@ -98,13 +127,14 @@
             <table>
                 <thead>
                     <tr>
-                        <th style="width: 25%">ID</th>
-                        <th style="width: 30%">Thời gian</th>
-                        <th style="width: 45%">Nội dung</th>
+                        <th style="width: 22%">ID</th>
+                        <th style="width: 28%">Thời gian</th>
+                        <th style="width: 30%">Nội dung</th>
+                        <th style="width: 20%">Trạng thái</th>
                     </tr>
                 </thead>
                 <tbody id="dataTableBody">
-                    <tr><td colspan="3" style="text-align: center; padding: 20px;">Đang tải dữ liệu...</td></tr>
+                    <tr><td colspan="4" style="text-align: center; padding: 20px;">Đang tải dữ liệu...</td></tr>
                 </tbody>
             </table>
         </div>
@@ -115,9 +145,17 @@
     const API_URL = "https://script.google.com/macros/s/AKfycbwYJnl7kuWclf8wpfTqB_RHHlEuqnjRae9HtTUoQWvV8eKxJsihjXrOkq-QfNzETmVG/exec"; 
     
     let html5QrCode;
-    let lastScannedCode = ""; // Lưu mã vừa quét để tránh quét trùng lặp liên tục
+    let lastScannedCode = ""; 
+    
+    // Quản lý Dữ liệu
+    let serverData = []; // Dữ liệu đã lưu thành công
+    let localQueue = JSON.parse(localStorage.getItem('qrQueue')) || []; // Dữ liệu chưa lưu (chờ đồng bộ)
+    let isSyncing = false;
 
-    // Helper: Tạo ID
+    function saveQueue() {
+        localStorage.setItem('qrQueue', JSON.stringify(localQueue));
+    }
+
     function generateID() {
         const now = new Date();
         const yy = String(now.getFullYear()).slice(-2);
@@ -130,7 +168,6 @@
         return `${yy}${mm}${dd}${hh}${min}${ss}${rand}`;
     }
 
-    // Helper: Tạo Timestamp
     function generateTimestamp() {
         const now = new Date();
         const hh = String(now.getHours()).padStart(2, '0');
@@ -142,139 +179,149 @@
         return `${hh}:${min}:${ss} ${dd}/${mm}/${yyyy}`;
     }
 
-    // Render toàn bộ bảng (Khi có dữ liệu từ Server)
-    function renderTable(dataArray) {
+    // Hiển thị Bảng
+    function renderTable() {
         const tbody = document.getElementById("dataTableBody");
         tbody.innerHTML = "";
-        if (!dataArray || dataArray.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="3" style="text-align: center; padding: 20px;">Chưa có dữ liệu</td></tr>`;
+        
+        if (localQueue.length === 0 && serverData.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="4" style="text-align: center; padding: 20px;">Chưa có dữ liệu</td></tr>`;
             return;
         }
-        
-        dataArray.slice().reverse().forEach(row => {
+
+        // 1. Dữ liệu chưa lưu / lỗi (Local Queue)
+        localQueue.slice().reverse().forEach(row => {
+            const tr = document.createElement("tr");
+            
+            // Xử lý text và class cho Trạng thái
+            let statusText = row.status === 'error' ? '⚠️ Thất bại' : '⏳ Đang xử lí';
+            let badgeClass = row.status === 'error' ? 'badge-failed' : 'badge-processing';
+            tr.className = row.status === 'error' ? 'row-failed' : 'row-processing';
+            
+            tr.innerHTML = `
+                <td>${row.A}</td>
+                <td>${row.B}</td>
+                <td><strong>${row.E}</strong></td>
+                <td><span class="status-badge ${badgeClass}">${statusText}</span></td>
+            `;
+            tbody.appendChild(tr);
+        });
+
+        // 2. Dữ liệu đã lưu (Server Data)
+        serverData.slice().reverse().forEach(row => {
             const tr = document.createElement("tr");
             tr.innerHTML = `
                 <td>${row.A || ''}</td>
                 <td>${row.B || ''}</td>
                 <td><strong>${row.E || ''}</strong></td>
+                <td><span class="status-badge badge-success">✅ Thành công</span></td>
             `;
             tbody.appendChild(tr);
         });
     }
 
-    // Cập nhật giao diện NGAY LẬP TỨC khi vừa quét/nhập (Optimistic UI)
-    function addOptimisticRow(id, time, content) {
-        const tbody = document.getElementById("dataTableBody");
-        // Xóa dòng "Chưa có dữ liệu" nếu có
-        if(tbody.innerText.includes("Chưa có dữ liệu") || tbody.innerText.includes("Đang tải")) {
-            tbody.innerHTML = "";
-        }
-        
-        const tr = document.createElement("tr");
-        tr.className = "row-pending"; // Thêm class đánh dấu đang xử lý
-        tr.innerHTML = `
-            <td>${id}</td>
-            <td>${time}</td>
-            <td><strong>${content}</strong></td>
-        `;
-        tbody.prepend(tr); // Chèn lên đầu bảng ngay lập tức
-    }
-
-    // Đổi trạng thái hiển thị text
     function setStatus(text, type) {
         const statusEl = document.getElementById("status");
         statusEl.textContent = text;
         statusEl.className = type;
-        
-        // Tự động clear trạng thái sau 3 giây nếu là success/error
         if (type === 'success' || type === 'error') {
             setTimeout(() => {
                 if (statusEl.textContent === text) {
-                    statusEl.textContent = "Đang chờ quét hoặc nhập liệu...";
+                    statusEl.textContent = "Sẵn sàng quét hoặc nhập liệu...";
                     statusEl.className = "";
                 }
             }, 3000);
         }
     }
 
-    // Gửi API ngầm định
-    async function sendRequest(payload) {
+    // ĐỒNG BỘ DỮ LIỆU LÊN SERVER
+    async function syncData() {
+        if (isSyncing || localQueue.length === 0) return;
+        isSyncing = true;
+
+        while (localQueue.length > 0) {
+            const currentItem = localQueue[0];
+            try {
+                const payload = { sheet: "QR", action: "add", A: currentItem.A, B: currentItem.B, E: currentItem.E };
+                const response = await fetch(API_URL, {
+                    method: "POST",
+                    headers: { "Content-Type": "text/plain;charset=utf-8" },
+                    body: JSON.stringify(payload)
+                });
+                const result = await response.json();
+                
+                if (result.status === "success") {
+                    localQueue.shift(); // Xóa khỏi hàng đợi khi thành công
+                    saveQueue();
+                    if (result.all_data) serverData = result.all_data;
+                    renderTable();
+                } else {
+                    throw new Error("Server error");
+                }
+            } catch (error) {
+                console.error("Lỗi đồng bộ:", error);
+                localQueue[0].status = 'error'; // Đánh dấu Thất bại
+                saveQueue();
+                renderTable();
+                break; // Ngừng vòng lặp để đợi 5s sau gọi lại
+            }
+        }
+        isSyncing = false;
+    }
+
+    setInterval(syncData, 5000);
+
+    async function loadInitialData() {
+        renderTable(); 
+        setStatus("Đang tải dữ liệu server...", "loading");
         try {
             const response = await fetch(API_URL, {
                 method: "POST",
                 headers: { "Content-Type": "text/plain;charset=utf-8" },
-                body: JSON.stringify(payload)
+                body: JSON.stringify({ sheet: "QR", action: "get" })
             });
             const result = await response.json();
-            // Thành công -> Đồng bộ lại bảng bằng data thật từ server
-            if (result.status === "success" && result.all_data) {
-                renderTable(result.all_data);
+            if (result && result.status === "success") {
+                serverData = result.all_data;
+                setStatus("Sẵn sàng quét QR hoặc Nhập thủ công", "success");
             }
-            return result;
         } catch (error) {
-            console.error("API Error:", error);
-            setStatus("Có lỗi mạng ngầm, vui lòng kiểm tra kết nối!", "error");
-            return null;
+            setStatus("Đang Offline! Dữ liệu quét sẽ được lưu tạm ở máy.", "error");
         }
+        renderTable();
+        syncData(); 
     }
 
-    // Lấy data ban đầu
-    async function loadInitialData() {
-        setStatus("Đang tải dữ liệu...", "loading");
-        const payload = { sheet: "QR", action: "get" };
-        const result = await sendRequest(payload);
-        if (result && result.status === "success") {
-            setStatus("Sẵn sàng quét QR hoặc Nhập thủ công", "success");
-        }
+    function addDataToQueue(content) {
+        const id = generateID();
+        const time = generateTimestamp();
+        localQueue.push({ A: id, B: time, E: content, status: 'pending' });
+        saveQueue();
+        renderTable();
+        syncData();
     }
 
-    // Xử lý khi Quét QR thành công
     function onScanSuccess(decodedText) {
-        // Chống spam quét cùng 1 mã liên tục trong vòng 2 giây
         if (decodedText === lastScannedCode) return; 
         lastScannedCode = decodedText;
         setTimeout(() => { lastScannedCode = ""; }, 2000); 
         
         navigator.vibrate && navigator.vibrate(200);
         setStatus(`Đã quét: ${decodedText}`, "success");
-
-        const id = generateID();
-        const time = generateTimestamp();
-
-        // 1. Hiển thị ngay lên bảng (Chưa cần chờ API)
-        addOptimisticRow(id, time, decodedText);
-
-        // 2. Gửi API ngầm (Không block người dùng quét mã tiếp theo)
-        const payload = { sheet: "QR", action: "add", A: id, B: time, E: decodedText };
-        sendRequest(payload);
+        addDataToQueue(decodedText);
     }
 
-    // --- TÍNH NĂNG NHẬP THỦ CÔNG ---
     function submitManual() {
         const inputEl = document.getElementById("manualInput");
         const textValue = inputEl.value.trim();
-
-        if (!textValue) {
-            inputEl.focus();
-            return;
-        }
+        if (!textValue) { inputEl.focus(); return; }
 
         setStatus(`Đã thêm: ${textValue}`, "success");
-        inputEl.value = ""; // Xóa ô nhập ngay lập tức để người dùng nhập mã khác
+        inputEl.value = "";
         inputEl.focus();
-
-        const id = generateID();
-        const time = generateTimestamp();
-
-        // 1. Hiển thị ngay lên bảng
-        addOptimisticRow(id, time, textValue);
-
-        // 2. Gửi API ngầm
-        const payload = { sheet: "QR", action: "add", A: id, B: time, E: textValue };
-        sendRequest(payload);
+        addDataToQueue(textValue);
     }
 
-    // Hỗ trợ bấm Enter để nhập tay
     document.getElementById("manualInput").addEventListener("keypress", function(event) {
         if (event.key === "Enter") {
             event.preventDefault();
@@ -282,47 +329,33 @@
         }
     });
 
-    // Khởi tạo Camera
     function startCamera() {
         html5QrCode = new Html5Qrcode("reader");
         const config = {
-            fps: 30,
-            qrbox: { width: 250, height: 250 },
-            aspectRatio: 1.0,
+            fps: 30, qrbox: { width: 250, height: 250 }, aspectRatio: 1.0,
             videoConstraints: { facingMode: "environment", width: { ideal: 1920 }, height: { ideal: 1080 } }
         };
-
         html5QrCode.start({ facingMode: "environment" }, config, onScanSuccess)
         .catch(err => {
-            setStatus("Không thể mở Camera (Có thể do thiếu quyền hoặc dùng trên máy tính không có cam).", "error");
+            setStatus("Không thể mở Camera. Vẫn có thể nhập tay bình thường.", "error");
             console.error(err);
         });
     }
 
-    // --- VÒNG ĐỜI TRANG WEB ---
-    window.onload = () => {
-        loadInitialData();
-        startCamera();
-    };
+    window.onload = () => { loadInitialData(); startCamera(); };
 
-    // Tắt cam khi rời trang để tiết kiệm pin
     document.addEventListener("visibilitychange", () => {
         if (document.visibilityState === "hidden") {
-            if (html5QrCode && html5QrCode.isScanning) {
-                html5QrCode.stop().catch(err => console.log(err));
-            }
+            if (html5QrCode && html5QrCode.isScanning) html5QrCode.stop().catch(err => console.log(err));
         } else if (document.visibilityState === "visible") {
-            if (html5QrCode && !html5QrCode.isScanning) {
-                startCamera();
-            }
+            if (html5QrCode && !html5QrCode.isScanning) startCamera();
+            syncData();
         }
     });
 
-    // Hủy cam khi đóng trình duyệt
     window.addEventListener("beforeunload", () => {
         if (html5QrCode && html5QrCode.isScanning) html5QrCode.stop();
     });
-
 </script>
 </body>
 </html>
