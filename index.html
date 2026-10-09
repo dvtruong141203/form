@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hệ thống Quản lý Dữ liệu</title>
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --sidebar-bg: #1e293b;
+            --accent-color: #3b82f6;
+            --text-color: #f8fafc;
+            --text-muted: #94a3b8;
+            --border-color: #334155;
+        }
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+        sidebar {
+            width: 260px;
+            background-color: var(--sidebar-bg);
+            border-right: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+        }
+        .sidebar-header {
+            padding: 20px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            border-bottom: 1px solid var(--border-color);
+            color: var(--text-color);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .nav-list {
+            list-style: none;
+            padding: 15px;
+            overflow-y: auto;
+            flex-grow: 1;
+        }
+        .nav-item {
+            padding: 12px 15px;
+            margin-bottom: 8px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+        .nav-item:hover, .nav-item.active {
+            background-color: var(--accent-color);
+            color: #ffffff;
+        }
+        .main-content {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+        iframe {
+            flex-grow: 1;
+            width: 100%;
+            border: none;
+            background-color: #ffffff;
+        }
+    </style>
+</head>
+<body>
+
+    <sidebar>
+        <div class="sidebar-header">
+            📁 Danh Mục Trang
+        </div>
+        <ul class="nav-list" id="navList">
+            <li class="nav-item">Đang tải danh mục từ Google Sheets...</li>
+        </ul>
+    </sidebar>
+
+    <div class="main-content">
+        <iframe id="contentFrame" src=""></iframe>
+    </div>
+
+    <script>
+        // Đường dẫn Web App Apps Script của bạn
+        const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzYtrzkbXMDIkzagqbIRHB1ZOV76GDO8On_Q5SrDC_5Nqt_Dzo6k8MWdvRRD0kYCZsI/exec';
+
+        async function fetchNavigationMenu() {
+            try {
+                const response = await fetch(APPS_SCRIPT_URL);
+                const data = await response.json();
+                
+                const navList = document.getElementById('navList');
+                navList.innerHTML = '';
+
+                if (!data || data.length === 0) {
+                    navList.innerHTML = '<li class="nav-item">Không tìm thấy trang nào.</li>';
+                    return;
+                }
+
+                data.forEach((item, index) => {
+                    const li = document.createElement('li');
+                    li.className = `nav-item ${index === 0 ? 'active' : ''}`;
+                    // Lấy tên cột tương ứng trong Google Sheets: 'Tên trang' và 'File'
+                    li.textContent = item['Tên trang'] || `Trang ${index + 1}`;
+                    li.onclick = () => loadPage(item['File'], li);
+                    navList.appendChild(li);
+                });
+
+                // Tự động load file đầu tiên vào iframe toàn màn hình khi mở web
+                if (data.length > 0 && data[0]['File']) {
+                    document.getElementById('contentFrame').src = data[0]['File'];
+                }
+
+            } catch (error) {
+                console.error('Lỗi khi tải dữ liệu menu:', error);
+                document.getElementById('navList').innerHTML = '<li class="nav-item" style="color: #ef4444;">Lỗi kết nối tới Google Sheets</li>';
+            }
+        }
+
+        function loadPage(url, element) {
+            if (!url) return;
+            document.getElementById('contentFrame').src = url;
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            element.classList.add('active');
+        }
+
+        // Tải danh mục menu ngay khi khởi động trang
+        fetchNavigationMenu();
+    </script>
+</body>
+</html>
