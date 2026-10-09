@@ -83,7 +83,7 @@
             📁 Danh Mục Trang
         </div>
         <ul class="nav-list" id="navList">
-            <li class="nav-item">Đang tải danh mục từ Google Sheets...</li>
+            <li class="nav-item">Đang tải danh mục...</li>
         </ul>
     </sidebar>
 
@@ -95,36 +95,56 @@
         // Đường dẫn Web App Apps Script của bạn
         const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzYtrzkbXMDIkzagqbIRHB1ZOV76GDO8On_Q5SrDC_5Nqt_Dzo6k8MWdvRRD0kYCZsI/exec';
 
-        async function fetchNavigationMenu() {
+        async function initApp() {
+            // 1. Kiểm tra xem bộ nhớ trình duyệt đã ghi nhớ dữ liệu danh mục từ trước chưa
+            let savedMenuData = localStorage.getItem('cached_sidebar_menu');
+            
+            if (savedMenuData) {
+                // Nếu đã nhớ, hiển thị ngay lập tức để không phải chờ đợi
+                renderMenu(JSON.parse(savedMenuData));
+            }
+
+            // 2. Đồng thời gọi ngầm lấy dữ liệu mới nhất từ URL Apps Script để cập nhật
             try {
                 const response = await fetch(APPS_SCRIPT_URL);
-                const data = await response.json();
-                
-                const navList = document.getElementById('navList');
-                navList.innerHTML = '';
-
-                if (!data || data.length === 0) {
-                    navList.innerHTML = '<li class="nav-item">Không tìm thấy trang nào.</li>';
-                    return;
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data && data.length > 0) {
+                        // Ghi nhớ dữ liệu mới vào localStorage
+                        localStorage.setItem('cached_sidebar_menu', JSON.stringify(data));
+                        // Render lại menu theo dữ liệu mới nhất từ Google Sheets
+                        renderMenu(data);
+                    }
                 }
-
-                data.forEach((item, index) => {
-                    const li = document.createElement('li');
-                    li.className = `nav-item ${index === 0 ? 'active' : ''}`;
-                    // Lấy tên cột tương ứng trong Google Sheets: 'Tên trang' và 'File'
-                    li.textContent = item['Tên trang'] || `Trang ${index + 1}`;
-                    li.onclick = () => loadPage(item['File'], li);
-                    navList.appendChild(li);
-                });
-
-                // Tự động load file đầu tiên vào iframe toàn màn hình khi mở web
-                if (data.length > 0 && data[0]['File']) {
-                    document.getElementById('contentFrame').src = data[0]['File'];
-                }
-
             } catch (error) {
-                console.error('Lỗi khi tải dữ liệu menu:', error);
-                document.getElementById('navList').innerHTML = '<li class="nav-item" style="color: #ef4444;">Lỗi kết nối tới Google Sheets</li>';
+                console.log('Không thể kết nối mạng hoặc lỗi Apps Script, sử dụng dữ liệu đã ghi nhớ.', error);
+                // Nếu chưa có cache từ trước mà gọi lỗi thì hiển thị thông báo dự phòng
+                if (!savedMenuData) {
+                    document.getElementById('navList').innerHTML = `
+                        <li class="nav-item active" onclick="loadPage('ad.html', this)">Form (Dự phòng)</li>
+                    `;
+                    document.getElementById('contentFrame').src = 'ad.html';
+                }
+            }
+        }
+
+        function renderMenu(data) {
+            const navList = document.getElementById('navList');
+            navList.innerHTML = '';
+
+            data.forEach((item, index) => {
+                const li = document.createElement('li');
+                // Kiểm tra nếu đang mở trang nào thì giữ trạng thái active
+                li.className = `nav-item ${index === 0 ? 'active' : ''}`;
+                li.textContent = item['Tên trang'] || `Trang ${index + 1}`;
+                li.onclick = () => loadPage(item['File'], li);
+                navList.appendChild(li);
+            });
+
+            // Tự động load file đầu tiên vào iframe nếu khung đang trống
+            const iframe = document.getElementById('contentFrame');
+            if (!iframe.src && data.length > 0 && data[0]['File']) {
+                iframe.src = data[0]['File'];
             }
         }
 
@@ -137,8 +157,8 @@
             element.classList.add('active');
         }
 
-        // Tải danh mục menu ngay khi khởi động trang
-        fetchNavigationMenu();
+        // Chạy khởi động ứng dụng ngay khi mở trang
+        initApp();
     </script>
 </body>
 </html>
