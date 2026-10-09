@@ -3,162 +3,138 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hệ thống Quản lý Dữ liệu</title>
+    <title>Giao Diện File Nhúng</title>
     <style>
-        :root {
-            --bg-color: #0f172a;
-            --sidebar-bg: #1e293b;
-            --accent-color: #3b82f6;
-            --text-color: #f8fafc;
-            --text-muted: #94a3b8;
-            --border-color: #334155;
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, sans-serif; }
+        body { display: flex; height: 100vh; overflow: hidden; background-color: #121212; color: #fff; }
+        
+        .sidebar { 
+            width: 260px; 
+            background: rgba(30, 30, 30, 0.7); 
+            backdrop-filter: blur(12px); 
+            -webkit-backdrop-filter: blur(12px);
+            border-right: 1px solid rgba(255,255,255,0.1); 
+            display: flex; 
+            flex-direction: column; 
+            padding: 20px 0; 
+            z-index: 10;
         }
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: var(--bg-color);
-            color: var(--text-color);
-            display: flex;
-            height: 100vh;
-            overflow: hidden;
-        }
-        sidebar {
-            width: 260px;
-            background-color: var(--sidebar-bg);
-            border-right: 1px solid var(--border-color);
-            display: flex;
-            flex-direction: column;
-        }
-        .sidebar-header {
-            padding: 20px;
-            font-size: 1.1rem;
-            font-weight: bold;
-            border-bottom: 1px solid var(--border-color);
-            color: var(--text-color);
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        .nav-list {
-            list-style: none;
-            padding: 15px;
-            overflow-y: auto;
-            flex-grow: 1;
-        }
-        .nav-item {
-            padding: 12px 15px;
-            margin-bottom: 8px;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            color: var(--text-muted);
+        .sidebar h2 { text-align: center; margin-bottom: 25px; font-size: 1.4rem; color: #ffffff; font-weight: 600; letter-spacing: 1px; }
+        
+        .menu-list { display: flex; flex-direction: column; gap: 8px; padding: 0 15px; overflow-y: auto; }
+        .menu-item { 
+            padding: 12px 20px; 
+            border-radius: 8px; 
+            cursor: pointer; 
+            transition: all 0.3s ease; 
+            color: #b0b0c0; 
+            font-size: 1rem; 
             font-weight: 500;
         }
-        .nav-item:hover, .nav-item.active {
-            background-color: var(--accent-color);
-            color: #ffffff;
+        .menu-item:hover { 
+            background: rgba(255, 255, 255, 0.05); 
+            color: #3b82f6; 
+            transform: translateX(5px);
         }
-        .main-content {
-            flex-grow: 1;
-            display: flex;
-            flex-direction: column;
-            height: 100vh;
+        .menu-item.active { 
+            background: rgba(255, 255, 255, 0.1);
+            color: #3b82f6; 
+            border-left: 4px solid #3b82f6;
+            border-radius: 0 8px 8px 0;
         }
-        iframe {
-            flex-grow: 1;
-            width: 100%;
-            border: none;
-            background-color: #ffffff;
+
+        .content { flex: 1; display: flex; flex-direction: column; background: #000000; position: relative; }
+        .header { 
+            padding: 15px 25px; 
+            background: rgba(30, 30, 30, 0.9); 
+            border-bottom: 1px solid rgba(255,255,255,0.1); 
+            font-size: 1.1rem; 
+            font-weight: 500;
+            display: flex; 
+            align-items: center; 
+        }
+        iframe { width: 100%; height: 100%; border: none; background: #fff; }
+        #loading { padding: 20px; text-align: center; color: #888; font-size: 0.9rem; }
+
+        @media (max-width: 768px) { 
+            body { flex-direction: column; } 
+            .sidebar { 
+                width: 100%; height: auto; flex-direction: row; align-items: center; justify-content: space-between; 
+                padding: 10px; border-right: none; border-bottom: 1px solid rgba(255,255,255,0.1); 
+            } 
+            .sidebar h2 { display: none; } 
+            .menu-list { flex-direction: row; padding: 0; gap: 10px; overflow-x: auto; width: 100%; white-space: nowrap; } 
+            .menu-item { padding: 10px 15px; font-size: 0.95rem; } 
+            .menu-item.active { border-left: none; border-bottom: 3px solid #3b82f6; border-radius: 8px 8px 0 0; }
+            .menu-item:hover { transform: none; }
         }
     </style>
 </head>
 <body>
 
-    <sidebar>
-        <div class="sidebar-header">
-            📁 Danh Mục Trang
+    <div class="sidebar">
+        <h2>Danh sách</h2>
+        <div class="menu-list" id="menuList">
+            <div id="loading">Đang tải dữ liệu...</div>
         </div>
-        <ul class="nav-list" id="navList">
-            <li class="nav-item">Đang tải danh mục...</li>
-        </ul>
-    </sidebar>
+    </div>
 
-    <div class="main-content">
-        <iframe id="contentFrame" src=""></iframe>
+    <div class="content">
+        <div class="header">
+            <span id="currentTitle">Đang khởi tạo...</span>
+        </div>
+        <iframe id="mainFrame" src="" title="Nội dung web"></iframe>
     </div>
 
     <script>
-        // Đường dẫn Web App Apps Script của bạn
-        const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzYtrzkbXMDIkzagqbIRHB1ZOV76GDO8On_Q5SrDC_5Nqt_Dzo6k8MWdvRRD0kYCZsI/exec';
+        const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzYtrzkbXMDIkzagqbIRHB1ZOV76GDO8On_Q5SrDC_5Nqt_Dzo6k8MWdvRRD0kYCZsI/exec";
+        const BASE_GITHUB_URL = "https://dvtruong141203.github.io/html/";
 
-        async function initApp() {
-            // 1. Kiểm tra xem bộ nhớ trình duyệt đã ghi nhớ dữ liệu danh mục từ trước chưa
-            let savedMenuData = localStorage.getItem('cached_sidebar_menu');
-            
-            if (savedMenuData) {
-                // Nếu đã nhớ, hiển thị ngay lập tức để không phải chờ đợi
-                renderMenu(JSON.parse(savedMenuData));
-            }
+        const menuList = document.getElementById('menuList');
+        const mainFrame = document.getElementById('mainFrame');
+        const currentTitle = document.getElementById('currentTitle');
 
-            // 2. Đồng thời gọi ngầm lấy dữ liệu mới nhất từ URL Apps Script để cập nhật
+        async function fetchData() {
             try {
+                // Fetch redirects automatically, but if CORS issues arise, ensure your Apps Script doGet uses ContentService.MimeType.JSON
                 const response = await fetch(APPS_SCRIPT_URL);
-                if (response.ok) {
-                    const data = await response.json();
-                    if (data && data.length > 0) {
-                        // Ghi nhớ dữ liệu mới vào localStorage
-                        localStorage.setItem('cached_sidebar_menu', JSON.stringify(data));
-                        // Render lại menu theo dữ liệu mới nhất từ Google Sheets
-                        renderMenu(data);
-                    }
+                const webData = await response.json();
+                
+                menuList.innerHTML = ''; 
+
+                if (!webData || webData.length === 0) {
+                    menuList.innerHTML = '<div id="loading">Chưa có dữ liệu</div>';
+                    currentTitle.textContent = "Không tìm thấy file nhúng";
+                    return;
                 }
+
+                webData.forEach((item, index) => {
+                    const menuItem = document.createElement('div');
+                    menuItem.className = 'menu-item' + (index === 0 ? ' active' : '');
+                    menuItem.textContent = item.title;
+                    
+                    menuItem.addEventListener('click', () => {
+                        document.querySelectorAll('.menu-item').forEach(el => el.classList.remove('active'));
+                        menuItem.classList.add('active');
+                        
+                        mainFrame.src = BASE_GITHUB_URL + item.file;
+                        currentTitle.textContent = "Đang hiển thị: " + item.title;
+                    });
+
+                    menuList.appendChild(menuItem);
+                });
+
+                mainFrame.src = BASE_GITHUB_URL + webData[0].file;
+                currentTitle.textContent = "Đang hiển thị: " + webData[0].title;
+
             } catch (error) {
-                console.log('Không thể kết nối mạng hoặc lỗi Apps Script, sử dụng dữ liệu đã ghi nhớ.', error);
-                // Nếu chưa có cache từ trước mà gọi lỗi thì hiển thị thông báo dự phòng
-                if (!savedMenuData) {
-                    document.getElementById('navList').innerHTML = `
-                        <li class="nav-item active" onclick="loadPage('ad.html', this)">Form (Dự phòng)</li>
-                    `;
-                    document.getElementById('contentFrame').src = 'ad.html';
-                }
+                console.error("Lỗi khi tải dữ liệu:", error);
+                menuList.innerHTML = '<div id="loading" style="color: #ef4444;">Lỗi kết nối API</div>';
+                currentTitle.textContent = "Lỗi hệ thống";
             }
         }
 
-        function renderMenu(data) {
-            const navList = document.getElementById('navList');
-            navList.innerHTML = '';
-
-            data.forEach((item, index) => {
-                const li = document.createElement('li');
-                // Kiểm tra nếu đang mở trang nào thì giữ trạng thái active
-                li.className = `nav-item ${index === 0 ? 'active' : ''}`;
-                li.textContent = item['Tên trang'] || `Trang ${index + 1}`;
-                li.onclick = () => loadPage(item['File'], li);
-                navList.appendChild(li);
-            });
-
-            // Tự động load file đầu tiên vào iframe nếu khung đang trống
-            const iframe = document.getElementById('contentFrame');
-            if (!iframe.src && data.length > 0 && data[0]['File']) {
-                iframe.src = data[0]['File'];
-            }
-        }
-
-        function loadPage(url, element) {
-            if (!url) return;
-            document.getElementById('contentFrame').src = url;
-            document.querySelectorAll('.nav-item').forEach(item => {
-                item.classList.remove('active');
-            });
-            element.classList.add('active');
-        }
-
-        // Chạy khởi động ứng dụng ngay khi mở trang
-        initApp();
+        fetchData();
     </script>
 </body>
 </html>
